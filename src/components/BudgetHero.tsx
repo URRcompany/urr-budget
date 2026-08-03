@@ -9,6 +9,7 @@ interface BudgetHeroProps {
   remaining: number
   usageRatio: number
   netProfit: number
+  showBack?: boolean
   onBack: () => void
   onUpdate: (
     patch: Partial<
@@ -23,6 +24,7 @@ export function BudgetHero({
   remaining,
   usageRatio,
   netProfit,
+  showBack = true,
   onBack,
   onUpdate,
 }: BudgetHeroProps) {
@@ -35,10 +37,12 @@ export function BudgetHero({
       <div className="hero__atmosphere" aria-hidden />
       <div className="hero__content">
         <div className="hero__nav">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={onBack}>
-            <ArrowLeft size={16} />
-            프로젝트 목록
-          </button>
+          {showBack && (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={onBack}>
+              <ArrowLeft size={16} />
+              프로젝트 목록
+            </button>
+          )}
           <p className="brand brand--sm">ReelBudget</p>
         </div>
 
