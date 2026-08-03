@@ -1,56 +1,106 @@
 import { useState, type CSSProperties } from 'react'
-import { Plus, RotateCcw } from 'lucide-react'
-import { useProject } from './hooks/useProject'
+import { Plus } from 'lucide-react'
+import { useStore } from './hooks/useStore'
+import { ProjectList } from './components/ProjectList'
 import { BudgetHero } from './components/BudgetHero'
+import { ProfitSummary } from './components/ProfitSummary'
 import { CategoryBreakdown } from './components/CategoryBreakdown'
 import { ExpenseList } from './components/ExpenseList'
 import { ExpenseForm } from './components/ExpenseForm'
-import type { CategoryId, Expense } from './types'
+import type { Expense } from './types'
 import './App.css'
 
 function App() {
   const {
-    project,
+    projects,
+    activeProject,
+    portfolio,
     filter,
     setFilter,
-    spent,
-    remaining,
-    usageRatio,
-    byCategory,
-    filteredExpenses,
-    updateMeta,
+    projectStats,
+    openProject,
+    closeProject,
+    createProject,
+    deleteProject,
+    updateProject,
     updateCategoryPlanned,
+    addCategory,
+    renameCategory,
+    deleteCategory,
     addExpense,
     updateExpense,
     deleteExpense,
-    resetSample,
+    resetSamples,
     categoryOf,
-  } = useProject()
+  } = useStore()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
 
+  if (!activeProject || !projectStats) {
+    return (
+      <div className="app">
+        <ProjectList
+          projects={projects}
+          portfolio={portfolio}
+          onOpen={openProject}
+          onDelete={deleteProject}
+          onCreate={createProject}
+          onResetSamples={resetSamples}
+        />
+      </div>
+    )
+  }
+
+  const {
+    spent,
+    remaining,
+    usageRatio,
+    netProfit,
+    margin,
+    byCategory,
+    filteredExpenses,
+  } = projectStats
+
   return (
     <div className="app">
       <BudgetHero
-        project={project}
+        project={activeProject}
         spent={spent}
         remaining={remaining}
         usageRatio={usageRatio}
-        onUpdate={updateMeta}
+        netProfit={netProfit}
+        onBack={closeProject}
+        onUpdate={(patch) => updateProject(activeProject.id, patch)}
       />
 
       <main className="main">
+        <ProfitSummary
+          revenue={activeProject.revenue}
+          spent={spent}
+          netProfit={netProfit}
+          margin={margin}
+          budget={activeProject.totalBudget}
+          remaining={remaining}
+        />
+
         <section className="section section--categories">
           <header className="section__head">
             <div>
-              <h2>카테고리별 배정</h2>
-              <p className="muted">항목별 계획 대비 집행 현황</p>
+              <h2>세부 비용 카테고리</h2>
+              <p className="muted">인건비·식비·교통비·장비대여비 등으로 나눠 관리</p>
             </div>
           </header>
           <CategoryBreakdown
             categories={byCategory}
-            onUpdatePlanned={updateCategoryPlanned}
+            onUpdatePlanned={(id, planned) =>
+              updateCategoryPlanned(activeProject.id, id, planned)
+            }
+            onAddCategory={(name) => addCategory(activeProject.id, name)}
+            onRenameCategory={(id, name) =>
+              renameCategory(activeProject.id, id, name)
+            }
+            onDeleteCategory={(id) => deleteCategory(activeProject.id, id)}
           />
         </section>
 
@@ -61,18 +111,6 @@ function App() {
               <p className="muted">{filteredExpenses.length}건</p>
             </div>
             <div className="section__actions">
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={() => {
-                  if (confirm('샘플 프로젝트로 초기화할까요? 현재 데이터가 덮어씌워집니다.')) {
-                    resetSample()
-                  }
-                }}
-              >
-                <RotateCcw size={15} />
-                샘플 불러오기
-              </button>
               <button
                 type="button"
                 className="btn btn--primary"
@@ -97,7 +135,7 @@ function App() {
             >
               전체
             </button>
-            {project.categories.map((c) => (
+            {activeProject.categories.map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -109,7 +147,7 @@ function App() {
                     ? ({ '--chip-accent': c.color } as CSSProperties)
                     : undefined
                 }
-                onClick={() => setFilter(c.id as CategoryId)}
+                onClick={() => setFilter(c.id)}
               >
                 <span className="chip__dot" style={{ background: c.color }} />
                 {c.name}
@@ -124,7 +162,7 @@ function App() {
               setEditing(e)
               setFormOpen(true)
             }}
-            onDelete={deleteExpense}
+            onDelete={(id) => deleteExpense(activeProject.id, id)}
           />
         </section>
       </main>
@@ -135,11 +173,11 @@ function App() {
           setFormOpen(false)
           setEditing(null)
         }}
-        categories={project.categories}
+        categories={activeProject.categories}
         initial={editing}
         onSubmit={(data) => {
-          if (editing) updateExpense(editing.id, data)
-          else addExpense(data)
+          if (editing) updateExpense(activeProject.id, editing.id, data)
+          else addExpense(activeProject.id, data)
         }}
       />
     </div>

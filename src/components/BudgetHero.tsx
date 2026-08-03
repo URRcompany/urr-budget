@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings2 } from 'lucide-react'
+import { ArrowLeft, Settings2 } from 'lucide-react'
 import type { Project } from '../types'
 import { formatKRW } from '../lib/format'
 
@@ -8,8 +8,12 @@ interface BudgetHeroProps {
   spent: number
   remaining: number
   usageRatio: number
+  netProfit: number
+  onBack: () => void
   onUpdate: (
-    patch: Partial<Pick<Project, 'name' | 'client' | 'shootDate' | 'totalBudget'>>,
+    patch: Partial<
+      Pick<Project, 'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget'>
+    >,
   ) => void
 }
 
@@ -18,6 +22,8 @@ export function BudgetHero({
   spent,
   remaining,
   usageRatio,
+  netProfit,
+  onBack,
   onUpdate,
 }: BudgetHeroProps) {
   const [editing, setEditing] = useState(false)
@@ -25,10 +31,16 @@ export function BudgetHero({
   const pct = Math.round(usageRatio * 100)
 
   return (
-    <section className="hero">
+    <section className="hero hero--detail">
       <div className="hero__atmosphere" aria-hidden />
       <div className="hero__content">
-        <p className="brand">ReelBudget</p>
+        <div className="hero__nav">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={onBack}>
+            <ArrowLeft size={16} />
+            프로젝트 목록
+          </button>
+          <p className="brand brand--sm">ReelBudget</p>
+        </div>
 
         {editing ? (
           <form
@@ -40,6 +52,7 @@ export function BudgetHero({
                 name: String(fd.get('name') || project.name),
                 client: String(fd.get('client') || ''),
                 shootDate: String(fd.get('shootDate') || ''),
+                revenue: Math.max(0, Number(fd.get('revenue')) || 0),
                 totalBudget: Math.max(0, Number(fd.get('totalBudget')) || 0),
               })
               setEditing(false)
@@ -58,7 +71,18 @@ export function BudgetHero({
               <input name="shootDate" type="date" defaultValue={project.shootDate} />
             </label>
             <label>
-              총 예산 (원)
+              계약·매출 (원)
+              <input
+                name="revenue"
+                type="number"
+                min={0}
+                step={100000}
+                defaultValue={project.revenue}
+                required
+              />
+            </label>
+            <label>
+              제작 예산 (원)
               <input
                 name="totalBudget"
                 type="number"
@@ -98,10 +122,22 @@ export function BudgetHero({
               )}
             </p>
 
-            <div className="hero__budget">
+            <div className="hero__budget hero__budget--triple">
               <div className="hero__figure">
-                <span className="label">총 예산</span>
-                <strong>{formatKRW(project.totalBudget)}</strong>
+                <span className="label">계약·매출</span>
+                <strong>{formatKRW(project.revenue)}</strong>
+              </div>
+              <div className="hero__figure">
+                <span className="label">제작 예산</span>
+                <strong className="hero__figure--secondary">
+                  {formatKRW(project.totalBudget)}
+                </strong>
+              </div>
+              <div className="hero__figure">
+                <span className="label">순수익</span>
+                <strong className={netProfit >= 0 ? '' : 'danger-text'}>
+                  {formatKRW(netProfit)}
+                </strong>
               </div>
               <button
                 type="button"
@@ -127,7 +163,7 @@ export function BudgetHero({
               집행 <strong>{formatKRW(spent)}</strong>
             </span>
             <span className={over ? 'danger' : ''}>
-              {over ? '초과' : '잔여'}{' '}
+              {over ? '예산 초과' : '예산 잔여'}{' '}
               <strong>{formatKRW(Math.abs(remaining))}</strong>
             </span>
             <span className="muted">{pct}%</span>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
-import type { Category, CategoryId, Expense } from '../types'
+import type { Category, Expense } from '../types'
 
 interface ExpenseFormProps {
   open: boolean
@@ -8,15 +8,6 @@ interface ExpenseFormProps {
   categories: Category[]
   initial?: Expense | null
   onSubmit: (data: Omit<Expense, 'id'>) => void
-}
-
-const empty = {
-  title: '',
-  amount: '',
-  categoryId: 'crew' as CategoryId,
-  date: new Date().toISOString().slice(0, 10),
-  note: '',
-  vendor: '',
 }
 
 export function ExpenseForm({
@@ -27,7 +18,15 @@ export function ExpenseForm({
   onSubmit,
 }: ExpenseFormProps) {
   const titleId = useId()
-  const [form, setForm] = useState(empty)
+  const defaultCategory = categories[0]?.id ?? 'other'
+  const [form, setForm] = useState({
+    title: '',
+    amount: '',
+    categoryId: defaultCategory,
+    date: new Date().toISOString().slice(0, 10),
+    note: '',
+    vendor: '',
+  })
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -42,10 +41,17 @@ export function ExpenseForm({
         vendor: initial.vendor,
       })
     } else {
-      setForm(empty)
+      setForm({
+        title: '',
+        amount: '',
+        categoryId: categories[0]?.id ?? 'other',
+        date: new Date().toISOString().slice(0, 10),
+        note: '',
+        vendor: '',
+      })
     }
     setError('')
-  }, [open, initial])
+  }, [open, initial, categories])
 
   useEffect(() => {
     if (!open) return
@@ -128,12 +134,10 @@ export function ExpenseForm({
           </div>
 
           <label className="field">
-            <span>카테고리</span>
+            <span>세부 카테고리</span>
             <select
               value={form.categoryId}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, categoryId: e.target.value as CategoryId }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
             >
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
