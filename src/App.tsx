@@ -16,6 +16,8 @@ function App() {
     portfolio,
     filter,
     setFilter,
+    ledgerMonth,
+    setLedgerMonth,
     projectStats,
     openProject,
     closeProject,
@@ -95,6 +97,9 @@ function App() {
         onToggleLaborPaymentPaid={(id, isPaid) =>
           toggleLaborPaymentPaid(activeProject.id, id, isPaid)
         }
+        allProjects={projects}
+        ledgerMonth={ledgerMonth}
+        onMonthChange={setLedgerMonth}
         categoryOf={categoryOf}
       />
     ) : null
@@ -112,7 +117,13 @@ function App() {
           onResetSamples={resetSamples}
         />
         <div className="desktop-main">
-          {detail ?? <WelcomePanel projectCount={projects.length} />}
+          {detail ?? (
+            <WelcomePanel
+              projects={projects}
+              ledgerMonth={ledgerMonth}
+              onMonthChange={setLedgerMonth}
+            />
+          )}
         </div>
       </div>
     )
@@ -124,6 +135,8 @@ function App() {
         <ProjectList
           projects={projects}
           portfolio={portfolio}
+          ledgerMonth={ledgerMonth}
+          onMonthChange={setLedgerMonth}
           onOpen={openProject}
           onDelete={deleteProject}
           onCreate={createProject}

@@ -1255,6 +1255,28 @@ p {
     grid-template-columns: 1fr 1fr;
   }
 
+  .ledger-kpi {
+    grid-template-columns: 1fr;
+  }
+
+  .year-strip__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    height: auto;
+    gap: 0.5rem;
+  }
+
+  .year-strip__cell {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .year-strip__bar {
+    width: 4px;
+    height: 24px !important;
+    border-radius: 4px;
+  }
+
   .profit-panel__grid {
     grid-template-columns: 1fr;
   }
@@ -1306,6 +1328,317 @@ p {
 }
 
 /* —— PC / Desktop layout —— */
+.sidebar-flag--ok {
+  background: rgba(42, 111, 124, 0.25);
+  color: #8fd0c0;
+}
+
+/* —— Monthly ledger / 가계부 —— */
+.ledger-month {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+}
+
+.ledger-month--compact {
+  padding: 1rem;
+}
+
+.ledger-month__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ledger-month__head h2 {
+  font-size: 1.25rem;
+}
+
+.ledger-month__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ledger-month__label {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  min-width: 7rem;
+  text-align: center;
+}
+
+.ledger-kpi {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ledger-kpi__card {
+  padding: 1rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.ledger-kpi__card .label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.ledger-kpi__card strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.ledger-kpi__card p {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.ledger-kpi__card--sales {
+  border-color: rgba(42, 111, 124, 0.25);
+  background: linear-gradient(145deg, rgba(42, 111, 124, 0.08), #fff);
+}
+
+.ledger-kpi__card--sales strong {
+  color: var(--teal);
+}
+
+.ledger-kpi__card--purchase {
+  border-color: rgba(196, 120, 42, 0.25);
+  background: linear-gradient(145deg, rgba(196, 120, 42, 0.08), #fff);
+}
+
+.ledger-kpi__card--purchase strong {
+  color: var(--accent-deep);
+}
+
+.ledger-kpi__card--net strong {
+  color: var(--teal);
+}
+
+.ledger-kpi__card--loss strong {
+  color: var(--danger);
+}
+
+.ledger-bars {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.ledger-bar-row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.ledger-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(20, 24, 31, 0.06);
+  overflow: hidden;
+}
+
+.ledger-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.ledger-bar-fill--sales {
+  background: var(--teal);
+}
+
+.ledger-bar-fill--purchase {
+  background: var(--accent);
+}
+
+.ledger-month-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.year-strip {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.year-strip__title {
+  font-size: 0.78rem;
+  margin-bottom: 0.65rem;
+}
+
+.year-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.35rem;
+  height: 88px;
+  align-items: end;
+}
+
+.year-strip__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.year-strip__cell:hover,
+.year-strip__cell--active {
+  background: rgba(20, 24, 31, 0.05);
+  color: var(--ink);
+}
+
+.year-strip__bar {
+  width: 100%;
+  max-width: 20px;
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.year-strip__bar--up {
+  background: var(--teal);
+}
+
+.year-strip__bar--down {
+  background: var(--danger);
+}
+
+.ledger-days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ledger-day {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-solid);
+  overflow: hidden;
+}
+
+.ledger-day__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.85rem;
+  background: rgba(20, 24, 31, 0.04);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.ledger-day__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.ledger-row__icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.ledger-row__icon--in {
+  background: rgba(42, 111, 124, 0.12);
+  color: var(--teal);
+}
+
+.ledger-row__icon--out {
+  background: rgba(196, 120, 42, 0.12);
+  color: var(--accent-deep);
+}
+
+.ledger-row__title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.ledger-row__meta {
+  display: block;
+  font-size: 0.72rem;
+  margin-top: 0.1rem;
+}
+
+.ledger-row__amount {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.section--ledger-main {
+  margin-bottom: 0.5rem;
+}
+
+.welcome-panel--ledger {
+  place-content: start;
+  min-height: auto;
+  padding: 1.5rem 2rem 3rem;
+  text-align: left;
+  gap: 0;
+}
+
+.welcome-panel--ledger .welcome-panel__hint {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.welcome-panel__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: var(--muted);
+}
+
 @media (min-width: 1024px) {
   .desktop-app {
     display: grid;

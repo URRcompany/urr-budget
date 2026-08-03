@@ -8,6 +8,8 @@ import { LaborPaymentsPanel } from './LaborPaymentsPanel'
 import { CategoryBreakdown } from './CategoryBreakdown'
 import { ExpenseList } from './ExpenseList'
 import { ExpenseForm } from './ExpenseForm'
+import { MonthlyLedger } from './MonthlyLedger'
+import { LedgerTimeline } from './LedgerTimeline'
 
 interface ProjectDetailViewProps {
   project: Project
@@ -52,6 +54,9 @@ interface ProjectDetailViewProps {
   onUpdateLaborPayment: (id: string, data: Omit<LaborPayment, 'id'>) => void
   onDeleteLaborPayment: (id: string) => void
   onToggleLaborPaymentPaid: (id: string, isPaid: boolean) => void
+  allProjects: Project[]
+  ledgerMonth: string
+  onMonthChange: (month: string) => void
   categoryOf: (id: string) => Category | undefined
 }
 
@@ -87,6 +92,9 @@ export function ProjectDetailView({
   onUpdateLaborPayment,
   onDeleteLaborPayment,
   onToggleLaborPaymentPaid,
+  allProjects,
+  ledgerMonth,
+  onMonthChange,
   categoryOf,
 }: ProjectDetailViewProps) {
   const [formOpen, setFormOpen] = useState(false)
@@ -106,6 +114,22 @@ export function ProjectDetailView({
       />
 
       <main className="main">
+        <section className="section section--ledger-main">
+          <MonthlyLedger
+            projects={allProjects}
+            month={ledgerMonth}
+            projectId={project.id}
+            projectName={project.name}
+            onMonthChange={onMonthChange}
+            compact
+          />
+          <LedgerTimeline
+            projects={allProjects}
+            month={ledgerMonth}
+            projectId={project.id}
+          />
+        </section>
+
         <div className="main__split">
           <div className="main__col">
             <ProfitSummary

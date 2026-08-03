@@ -9,6 +9,9 @@ import {
   type Project,
 } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { getMonthStats, monthKey } from '../lib/ledger'
+import { MonthlyLedger } from './MonthlyLedger'
+import { LedgerTimeline } from './LedgerTimeline'
 
 interface ProjectListProps {
   projects: Project[]
@@ -18,6 +21,8 @@ interface ProjectListProps {
     spent: number
     netProfit: number
   }
+  ledgerMonth: string
+  onMonthChange: (month: string) => void
   onOpen: (id: string) => void
   onDelete: (id: string) => void
   onCreate: (input: {
@@ -33,12 +38,15 @@ interface ProjectListProps {
 export function ProjectList({
   projects,
   portfolio,
+  ledgerMonth,
+  onMonthChange,
   onOpen,
   onDelete,
   onCreate,
   onResetSamples,
 }: ProjectListProps) {
   const [creating, setCreating] = useState(false)
+  const thisMonth = getMonthStats(projects, monthKey())
 
   return (
     <div className="home">
@@ -48,31 +56,40 @@ export function ProjectList({
           <p className="brand">ReelBudget</p>
           <h1 className="home-hero__title">영상제작 프로젝트 예산</h1>
           <p className="home-hero__sub">
-            여러 프로젝트를 한곳에서 관리하고, 세부 비용과 순수익을 확인하세요.
+            월별 매출·매입 장부로 「7월에 얼마 벌었는지」 바로 확인하세요.
           </p>
 
-          <div className="portfolio-strip">
+          <div className="portfolio-strip portfolio-strip--ledger">
             <div>
-              <span className="label">프로젝트</span>
-              <strong>{portfolio.count}</strong>
+              <span className="label">이번 달 매출</span>
+              <strong className="profit">{formatKRW(thisMonth.sales)}</strong>
             </div>
             <div>
-              <span className="label">총 계약</span>
-              <strong>{formatKRW(portfolio.revenue)}</strong>
+              <span className="label">이번 달 매입</span>
+              <strong>{formatKRW(thisMonth.purchases)}</strong>
             </div>
             <div>
-              <span className="label">총 집행</span>
-              <strong>{formatKRW(portfolio.spent)}</strong>
-            </div>
-            <div>
-              <span className="label">합산 순수익</span>
-              <strong className={portfolio.netProfit >= 0 ? 'profit' : 'danger'}>
-                {formatKRW(portfolio.netProfit)}
+              <span className="label">이번 달 순이익</span>
+              <strong className={thisMonth.net >= 0 ? 'profit' : 'danger'}>
+                {formatKRW(thisMonth.net)}
               </strong>
+            </div>
+            <div>
+              <span className="label">전체 프로젝트</span>
+              <strong>{portfolio.count}</strong>
             </div>
           </div>
         </div>
       </header>
+
+      <section className="section section--ledger">
+        <MonthlyLedger
+          projects={projects}
+          month={ledgerMonth}
+          onMonthChange={onMonthChange}
+        />
+        <LedgerTimeline projects={projects} month={ledgerMonth} />
+      </section>
 
       <section className="section">
         <header className="section__head">

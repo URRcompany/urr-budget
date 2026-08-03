@@ -1,23 +1,38 @@
 import { Film } from 'lucide-react'
+import { MonthlyLedger } from './MonthlyLedger'
+import { LedgerTimeline } from './LedgerTimeline'
+import type { Project } from '../types'
 
 interface WelcomePanelProps {
-  projectCount: number
+  projects: Project[]
+  ledgerMonth: string
+  onMonthChange: (month: string) => void
 }
 
-export function WelcomePanel({ projectCount }: WelcomePanelProps) {
+export function WelcomePanel({
+  projects,
+  ledgerMonth,
+  onMonthChange,
+}: WelcomePanelProps) {
   return (
-    <div className="welcome-panel">
-      <div className="welcome-panel__icon" aria-hidden>
-        <Film size={40} strokeWidth={1.5} />
-      </div>
-      <h2>프로젝트를 선택하세요</h2>
-      <p className="muted">
-        왼쪽 목록에서 프로젝트를 고르거나 새로 만들어 예산·지출·순수익을
-        관리하세요.
-      </p>
-      {projectCount === 0 && (
-        <p className="welcome-panel__hint">
-          「새 프로젝트」 버튼으로 첫 프로젝트를 추가해 보세요.
+    <div className="welcome-panel welcome-panel--ledger">
+      <MonthlyLedger
+        projects={projects}
+        month={ledgerMonth}
+        onMonthChange={onMonthChange}
+      />
+      <LedgerTimeline
+        projects={projects}
+        month={ledgerMonth}
+      />
+      {projects.length === 0 ? (
+        <div className="welcome-panel__empty">
+          <Film size={32} strokeWidth={1.5} aria-hidden />
+          <p>프로젝트를 추가하면 월별 매출·매입 장부가 채워집니다.</p>
+        </div>
+      ) : (
+        <p className="welcome-panel__hint muted">
+          왼쪽에서 프로젝트를 선택하면 프로젝트별 장부를 볼 수 있습니다.
         </p>
       )}
     </div>

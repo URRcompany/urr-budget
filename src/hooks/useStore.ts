@@ -17,6 +17,7 @@ import {
   type Project,
 } from '../types'
 import { uid } from '../lib/format'
+import { monthKey } from '../lib/ledger'
 
 const STORAGE_KEY = 'reelbudget.store.v3'
 const STORAGE_KEY_V2 = 'reelbudget.store.v2'
@@ -120,6 +121,7 @@ function loadStore(): AppStore {
 export function useStore() {
   const [store, setStore] = useState<AppStore>(loadStore)
   const [filter, setFilter] = useState<string | 'all'>('all')
+  const [ledgerMonth, setLedgerMonth] = useState(monthKey)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
@@ -508,6 +510,8 @@ export function useStore() {
     portfolio,
     filter,
     setFilter,
+    ledgerMonth,
+    setLedgerMonth,
     projectStats,
     openProject,
     closeProject,
