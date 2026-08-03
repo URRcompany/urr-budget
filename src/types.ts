@@ -36,6 +36,8 @@ export interface LaborPayment {
   paidDate: string
   isPaid: boolean
   note: string
+  /** 지급 시 자동 생성된 지출 ID (매입 이중집계 방지) */
+  expenseId?: string
 }
 
 export interface Project {
@@ -235,10 +237,10 @@ export function createSampleProjects(): Project[] {
           id: 'cp3',
           label: '잔금',
           amount: 10_500_000,
-          dueDate: '2026-10-15',
+          dueDate: '2026-07-01',
           paidDate: '',
           isPaid: false,
-          note: '납품·검수 후',
+          note: '납품·검수 후 · 연체 예시',
         },
       ],
       laborPayments: [
@@ -347,10 +349,10 @@ export function createSampleProjects(): Project[] {
           id: 'cp5',
           label: '잔금',
           amount: 12_600_000,
-          dueDate: '2026-11-01',
+          dueDate: '2026-08-08',
           paidDate: '',
           isPaid: false,
-          note: '마스터 납품 후',
+          note: '마스터 납품 후 · 7일 내 예정',
         },
       ],
       laborPayments: [

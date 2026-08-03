@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   breakdownPurchases,
   formatMonthLabel,
@@ -8,6 +8,7 @@ import {
   shiftMonth,
   type MonthStats,
 } from '../lib/ledger'
+import { exportMonthlyLedgerCSV, exportYearlySummaryCSV } from '../lib/export'
 import type { Project } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
 
@@ -47,26 +48,48 @@ export function MonthlyLedger({
           <h2 id="ledger-month-heading">
             {projectName ? `${projectName} · ` : ''}월별 장부
           </h2>
-          <p className="muted">실입금(매출) − 지출(매입) = 순이익</p>
+          <p className="muted">실입금(매출) − 지출·인건비(매입) = 순이익</p>
         </div>
-        <div className="ledger-month__nav">
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="이전 달"
-            onClick={() => onMonthChange(shiftMonth(month, -1))}
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <strong className="ledger-month__label">{formatMonthLabel(month)}</strong>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="다음 달"
-            onClick={() => onMonthChange(shiftMonth(month, 1))}
-          >
-            <ChevronRight size={20} />
-          </button>
+        <div className="ledger-month__actions">
+          <div className="ledger-month__nav">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="이전 달"
+              onClick={() => onMonthChange(shiftMonth(month, -1))}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <strong className="ledger-month__label">{formatMonthLabel(month)}</strong>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="다음 달"
+              onClick={() => onMonthChange(shiftMonth(month, 1))}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          <div className="ledger-month__export">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => exportMonthlyLedgerCSV(projects, month, projectId)}
+            >
+              <Download size={15} />
+              CSV
+            </button>
+            {!compact && (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => exportYearlySummaryCSV(projects, year)}
+              >
+                <Download size={15} />
+                {year}년 요약
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

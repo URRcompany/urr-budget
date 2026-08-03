@@ -104,6 +104,7 @@ export function buildLedgerEntries(
 
     for (const lp of p.laborPayments) {
       if (!lp.isPaid || !lp.paidDate) continue
+      if (lp.expenseId) continue
       if (opts?.month && !inMonth(lp.paidDate, opts.month)) continue
       entries.push({
         id: `lb_${p.id}_${lp.id}`,
@@ -223,4 +224,15 @@ export function breakdownPurchases(
     else expenses += e.amount
   }
   return { expenses, labor }
+}
+
+/** expenseId 없이 지급만 된 인건비 (레거시) 포함 여부 확인용 */
+export function countUnlinkedLaborPaid(projects: Project[]): number {
+  let n = 0
+  for (const p of projects) {
+    for (const lp of p.laborPayments) {
+      if (lp.isPaid && !lp.expenseId) n++
+    }
+  }
+  return n
 }

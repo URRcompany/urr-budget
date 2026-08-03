@@ -12,6 +12,7 @@ import { formatDate, formatKRW } from '../lib/format'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
+import { OverdueAlert } from './OverdueAlert'
 
 interface ProjectListProps {
   projects: Project[]
@@ -83,6 +84,7 @@ export function ProjectList({
       </header>
 
       <section className="section section--ledger">
+        <OverdueAlert projects={projects} onOpenProject={onOpen} />
         <MonthlyLedger
           projects={projects}
           month={ledgerMonth}

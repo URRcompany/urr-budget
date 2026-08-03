@@ -122,6 +122,7 @@ function App() {
               projects={projects}
               ledgerMonth={ledgerMonth}
               onMonthChange={setLedgerMonth}
+              onOpenProject={openProject}
             />
           )}
         </div>

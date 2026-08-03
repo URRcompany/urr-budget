@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Circle, Plus, Trash2 } from 'lucide-react'
 import type { ClientPayment } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { daysOverdue, isPaymentOverdue } from '../lib/receivables'
 
 interface ClientPaymentsPanelProps {
   payments: ClientPayment[]
@@ -26,6 +27,7 @@ export function ClientPaymentsPanel({
 }: ClientPaymentsPanelProps) {
   const [adding, setAdding] = useState(false)
   const pendingCount = payments.filter((p) => !p.isPaid).length
+  const overdueCount = payments.filter((p) => isPaymentOverdue(p)).length
   const pct = revenue > 0 ? Math.round((received / revenue) * 100) : 0
 
   return (
@@ -35,7 +37,12 @@ export function ClientPaymentsPanel({
           <h2 id="client-pay-heading">클라이언트 입금</h2>
           <p className="muted">
             입금 {formatKRW(received)} / 계약 {formatKRW(revenue)}
-            {pendingCount > 0 && (
+            {overdueCount > 0 && (
+              <span className="badge badge--danger payment-panel__badge">
+                연체 {overdueCount}건
+              </span>
+            )}
+            {pendingCount > 0 && overdueCount === 0 && (
               <span className="badge badge--warn payment-panel__badge">
                 미수 {pendingCount}건
               </span>
@@ -127,8 +134,13 @@ function PaymentRow({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const overdue = isPaymentOverdue(payment)
+  const overdueDays = daysOverdue(payment)
+
   return (
-    <li className={`payment-row ${payment.isPaid ? 'payment-row--done' : ''}`}>
+    <li
+      className={`payment-row ${payment.isPaid ? 'payment-row--done' : ''} ${overdue ? 'payment-row--overdue' : ''}`}
+    >
       <button
         type="button"
         className={`payment-check ${payment.isPaid ? 'payment-check--done' : ''}`}
@@ -141,9 +153,14 @@ function PaymentRow({
         <span className="payment-row__title">{payment.label}</span>
         <span className="payment-row__meta muted">
           {payment.dueDate && <>예정 {formatDate(payment.dueDate)} · </>}
+          {overdue && (
+            <strong className="danger">{overdueDays}일 연체 · </strong>
+          )}
           {payment.isPaid && payment.paidDate
             ? `입금 ${formatDate(payment.paidDate)}`
-            : '미입금'}
+            : !overdue
+              ? '미입금'
+              : '미입금'}
           {payment.note && <> · {payment.note}</>}
         </span>
       </button>

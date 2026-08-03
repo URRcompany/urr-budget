@@ -1,21 +1,25 @@
 import { Film } from 'lucide-react'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
+import { OverdueAlert } from './OverdueAlert'
 import type { Project } from '../types'
 
 interface WelcomePanelProps {
   projects: Project[]
   ledgerMonth: string
   onMonthChange: (month: string) => void
+  onOpenProject?: (id: string) => void
 }
 
 export function WelcomePanel({
   projects,
   ledgerMonth,
   onMonthChange,
+  onOpenProject,
 }: WelcomePanelProps) {
   return (
     <div className="welcome-panel welcome-panel--ledger">
+      <OverdueAlert projects={projects} onOpenProject={onOpenProject} />
       <MonthlyLedger
         projects={projects}
         month={ledgerMonth}

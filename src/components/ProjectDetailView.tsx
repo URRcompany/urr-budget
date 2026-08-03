@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Download } from 'lucide-react'
 import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
 import { BudgetHero } from './BudgetHero'
 import { ProfitSummary } from './ProfitSummary'
@@ -10,6 +10,8 @@ import { ExpenseList } from './ExpenseList'
 import { ExpenseForm } from './ExpenseForm'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
+import { OverdueAlert } from './OverdueAlert'
+import { exportProjectCSV } from '../lib/export'
 
 interface ProjectDetailViewProps {
   project: Project
@@ -114,6 +116,17 @@ export function ProjectDetailView({
       />
 
       <main className="main">
+        <OverdueAlert projects={[project]} />
+        <div className="detail-export">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => exportProjectCSV(project)}
+          >
+            <Download size={15} />
+            프로젝트 CSV 내보내기
+          </button>
+        </div>
         <section className="section section--ledger-main">
           <MonthlyLedger
             projects={allProjects}

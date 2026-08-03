@@ -331,7 +331,15 @@ export function useStore() {
       projects: s.projects.map((p) =>
         p.id !== projectId
           ? p
-          : { ...p, expenses: p.expenses.filter((e) => e.id !== expenseId) },
+          : {
+              ...p,
+              expenses: p.expenses.filter((e) => e.id !== expenseId),
+              laborPayments: p.laborPayments.map((lp) =>
+                lp.expenseId === expenseId
+                  ? { ...lp, expenseId: undefined, isPaid: false, paidDate: '' }
+                  : lp,
+              ),
+            },
       ),
     }))
   }, [])
@@ -428,30 +436,72 @@ export function useStore() {
 
   const deleteLaborPayment = useCallback(
     (projectId: string, paymentId: string) => {
-      patchProject(projectId, (p) => ({
-        ...p,
-        laborPayments: p.laborPayments.filter((lp) => lp.id !== paymentId),
-      }))
+      patchProject(projectId, (p) => {
+        const lp = p.laborPayments.find((l) => l.id === paymentId)
+        return {
+          ...p,
+          expenses: lp?.expenseId
+            ? p.expenses.filter((e) => e.id !== lp.expenseId)
+            : p.expenses,
+          laborPayments: p.laborPayments.filter((l) => l.id !== paymentId),
+        }
+      })
     },
     [patchProject],
   )
 
   const toggleLaborPaymentPaid = useCallback(
     (projectId: string, paymentId: string, isPaid: boolean) => {
-      patchProject(projectId, (p) => ({
-        ...p,
-        laborPayments: p.laborPayments.map((lp) =>
-          lp.id === paymentId
-            ? {
-                ...lp,
-                isPaid,
-                paidDate: isPaid
-                  ? lp.paidDate || new Date().toISOString().slice(0, 10)
-                  : '',
-              }
-            : lp,
-        ),
-      }))
+      patchProject(projectId, (p) => {
+        const lp = p.laborPayments.find((l) => l.id === paymentId)
+        if (!lp) return p
+
+        if (isPaid) {
+          const paidDate = lp.paidDate || new Date().toISOString().slice(0, 10)
+          let expenseId = lp.expenseId
+          let expenses = p.expenses
+
+          if (!expenseId) {
+            expenseId = uid()
+            expenses = [
+              {
+                id: expenseId,
+                title: `${lp.name} 인건비`,
+                amount: lp.amount,
+                categoryId: 'labor',
+                date: paidDate,
+                note: [lp.role, lp.note].filter(Boolean).join(' · '),
+                vendor: lp.name,
+              },
+              ...p.expenses,
+            ]
+          }
+
+          return {
+            ...p,
+            expenses,
+            laborPayments: p.laborPayments.map((l) =>
+              l.id === paymentId
+                ? { ...l, isPaid: true, paidDate, expenseId }
+                : l,
+            ),
+          }
+        }
+
+        const expenses = lp.expenseId
+          ? p.expenses.filter((e) => e.id !== lp.expenseId)
+          : p.expenses
+
+        return {
+          ...p,
+          expenses,
+          laborPayments: p.laborPayments.map((l) =>
+            l.id === paymentId
+              ? { ...l, isPaid: false, paidDate: '', expenseId: undefined }
+              : l,
+          ),
+        }
+      })
     },
     [patchProject],
   )

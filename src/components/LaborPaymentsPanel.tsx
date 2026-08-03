@@ -42,6 +42,9 @@ export function LaborPaymentsPanel({
                 미지급 {stats.unpaidCount}명
               </span>
             )}
+            <span className="muted payment-panel__hint-inline">
+              · 지급 완료 시 지출 내역 자동 등록
+            </span>
           </p>
         </div>
         <button
@@ -132,6 +135,9 @@ export function LaborPaymentsPanel({
                   {p.isPaid && p.paidDate
                     ? `지급 ${formatDate(p.paidDate)}`
                     : '미지급'}
+                  {p.isPaid && p.expenseId && (
+                    <> · <span className="link-badge">지출 연동</span></>
+                  )}
                   {p.note && <> · {p.note}</>}
                 </span>
               </button>
