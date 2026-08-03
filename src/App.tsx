@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Plus, RotateCcw } from 'lucide-react'
 import { useProject } from './hooks/useProject'
 import { BudgetHero } from './components/BudgetHero'
@@ -106,7 +106,7 @@ function App() {
                 className={`chip ${filter === c.id ? 'chip--active' : ''}`}
                 style={
                   filter === c.id
-                    ? ({ '--chip-accent': c.color } as React.CSSProperties)
+                    ? ({ '--chip-accent': c.color } as CSSProperties)
                     : undefined
                 }
                 onClick={() => setFilter(c.id as CategoryId)}
