@@ -389,6 +389,64 @@ p {
   color: var(--danger);
 }
 
+.payment-row--no-invoice {
+  border-color: rgba(168, 107, 26, 0.3);
+}
+
+.invoice-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.invoice-check:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+.invoice-check--done {
+  background: rgba(196, 120, 42, 0.12);
+  border-color: rgba(196, 120, 42, 0.4);
+  color: var(--accent-deep);
+}
+
+.invoice-check--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.invoice-check-inline--done {
+  color: var(--accent-deep) !important;
+  background: rgba(196, 120, 42, 0.1) !important;
+}
+
+.expense-row--no-invoice {
+  border-color: rgba(168, 107, 26, 0.22);
+}
+
+.field--checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field--checkbox input {
+  width: auto;
+}
+
+.field--checkbox span {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
 .payment-row--overdue {
   border-color: rgba(179, 58, 43, 0.35);
   background: rgba(179, 58, 43, 0.04);
@@ -727,7 +785,7 @@ p {
 
 .payment-row {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
   gap: 0.65rem;
   padding: 0.75rem 0.85rem;

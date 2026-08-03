@@ -23,14 +23,47 @@ const STORAGE_KEY = 'reelbudget.store.v3'
 const STORAGE_KEY_V2 = 'reelbudget.store.v2'
 const LEGACY_KEY = 'reelbudget.project.v1'
 
+function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>): Expense {
+  return {
+    id: e.id,
+    title: e.title,
+    amount: e.amount,
+    categoryId: e.categoryId,
+    date: e.date,
+    note: e.note ?? '',
+    vendor: e.vendor ?? '',
+    invoiceReceived: e.invoiceReceived ?? false,
+  }
+}
+
+function normalizeClientPayment(
+  cp: Partial<ClientPayment> & Pick<ClientPayment, 'id' | 'label' | 'amount'>,
+): ClientPayment {
+  return {
+    id: cp.id,
+    label: cp.label,
+    amount: cp.amount,
+    dueDate: cp.dueDate ?? '',
+    paidDate: cp.paidDate ?? '',
+    isPaid: cp.isPaid ?? false,
+    note: cp.note ?? '',
+    invoiceIssued: cp.invoiceIssued ?? false,
+    invoiceDate: cp.invoiceDate ?? '',
+  }
+}
+
 function normalizeProject(p: Partial<Project> & { name: string }): Project {
   const base = createEmptyProject()
   return {
     ...base,
     ...p,
     categories: p.categories?.length ? p.categories : base.categories,
-    expenses: p.expenses ?? [],
-    clientPayments: p.clientPayments ?? [],
+    expenses: (p.expenses ?? []).map((e) =>
+      normalizeExpense(e as Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>),
+    ),
+    clientPayments: (p.clientPayments ?? []).map((cp) =>
+      normalizeClientPayment(cp as Partial<ClientPayment> & Pick<ClientPayment, 'id' | 'label' | 'amount'>),
+    ),
     laborPayments: p.laborPayments ?? [],
   }
 }
@@ -412,6 +445,38 @@ export function useStore() {
     [patchProject],
   )
 
+  const toggleClientPaymentInvoice = useCallback(
+    (projectId: string, paymentId: string, issued: boolean) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: p.clientPayments.map((cp) =>
+          cp.id === paymentId
+            ? {
+                ...cp,
+                invoiceIssued: issued,
+                invoiceDate: issued
+                  ? cp.invoiceDate || new Date().toISOString().slice(0, 10)
+                  : '',
+              }
+            : cp,
+        ),
+      }))
+    },
+    [patchProject],
+  )
+
+  const toggleExpenseInvoice = useCallback(
+    (projectId: string, expenseId: string, received: boolean) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        expenses: p.expenses.map((e) =>
+          e.id === expenseId ? { ...e, invoiceReceived: received } : e,
+        ),
+      }))
+    },
+    [patchProject],
+  )
+
   const addLaborPayment = useCallback(
     (projectId: string, data: Omit<LaborPayment, 'id'>) => {
       patchProject(projectId, (p) => ({
@@ -472,6 +537,7 @@ export function useStore() {
                 date: paidDate,
                 note: [lp.role, lp.note].filter(Boolean).join(' · '),
                 vendor: lp.name,
+                invoiceReceived: false,
               },
               ...p.expenses,
             ]
@@ -580,6 +646,8 @@ export function useStore() {
     updateClientPayment,
     deleteClientPayment,
     toggleClientPaymentPaid,
+    toggleClientPaymentInvoice,
+    toggleExpenseInvoice,
     addLaborPayment,
     updateLaborPayment,
     deleteLaborPayment,

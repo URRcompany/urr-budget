@@ -77,21 +77,31 @@ export function exportProjectCSV(project: Project) {
     ['제작예산', project.totalBudget],
     [],
     ['[클라이언트 입금]'],
-    ['회차', '금액', '예정일', '입금일', '상태', '메모'],
+    ['회차', '금액', '예정일', '입금일', '상태', '계산서발행', '발행일', '메모'],
     ...project.clientPayments.map((cp) => [
       cp.label,
       cp.amount,
       cp.dueDate,
       cp.paidDate,
       cp.isPaid ? '입금완료' : '미입금',
+      cp.invoiceIssued ? '발행' : '미발행',
+      cp.invoiceDate ?? '',
       cp.note,
     ]),
     [],
     ['[지출 내역]'],
-    ['항목', '금액', '날짜', '카테고리', '거래처', '메모'],
+    ['항목', '금액', '날짜', '카테고리', '거래처', '계산서수령', '메모'],
     ...project.expenses.map((e) => {
       const cat = project.categories.find((c) => c.id === e.categoryId)
-      return [e.title, e.amount, e.date, cat?.name ?? '', e.vendor, e.note]
+      return [
+        e.title,
+        e.amount,
+        e.date,
+        cat?.name ?? '',
+        e.vendor,
+        e.invoiceReceived ? '수령' : '미수령',
+        e.note,
+      ]
     }),
     [],
     ['[인건비 지급]'],

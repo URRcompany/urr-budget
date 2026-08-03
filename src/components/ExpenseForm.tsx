@@ -26,6 +26,7 @@ export function ExpenseForm({
     date: new Date().toISOString().slice(0, 10),
     note: '',
     vendor: '',
+    invoiceReceived: false,
   })
   const [error, setError] = useState('')
 
@@ -39,6 +40,7 @@ export function ExpenseForm({
         date: initial.date,
         note: initial.note,
         vendor: initial.vendor,
+        invoiceReceived: initial.invoiceReceived ?? false,
       })
     } else {
       setForm({
@@ -48,6 +50,7 @@ export function ExpenseForm({
         date: new Date().toISOString().slice(0, 10),
         note: '',
         vendor: '',
+        invoiceReceived: false,
       })
     }
     setError('')
@@ -82,6 +85,7 @@ export function ExpenseForm({
       date: form.date,
       note: form.note.trim(),
       vendor: form.vendor.trim(),
+      invoiceReceived: form.invoiceReceived,
     })
     onClose()
   }
@@ -164,6 +168,17 @@ export function ExpenseForm({
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
               placeholder="선택 사항"
             />
+          </label>
+
+          <label className="field field--checkbox">
+            <input
+              type="checkbox"
+              checked={form.invoiceReceived}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, invoiceReceived: e.target.checked }))
+              }
+            />
+            <span>거래처 계산서·세금계산서 수령</span>
           </label>
 
           {error && <p className="form-error">{error}</p>}

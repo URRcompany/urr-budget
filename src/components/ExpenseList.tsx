@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { FileText, Pencil, Trash2 } from 'lucide-react'
 import type { Category, Expense } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 
@@ -7,6 +7,7 @@ interface ExpenseListProps {
   categoryOf: (id: Expense['categoryId']) => Category | undefined
   onEdit: (expense: Expense) => void
   onDelete: (id: string) => void
+  onToggleInvoice?: (id: string, received: boolean) => void
 }
 
 export function ExpenseList({
@@ -14,6 +15,7 @@ export function ExpenseList({
   categoryOf,
   onEdit,
   onDelete,
+  onToggleInvoice,
 }: ExpenseListProps) {
   if (expenses.length === 0) {
     return (
@@ -31,7 +33,7 @@ export function ExpenseList({
         return (
           <li
             key={e.id}
-            className="expense-row"
+            className={`expense-row ${!(e.invoiceReceived ?? false) ? 'expense-row--no-invoice' : ''}`}
             style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
           >
             <span
@@ -51,11 +53,35 @@ export function ExpenseList({
                     <span>{e.vendor}</span>
                   </>
                 )}
+                {(e.invoiceReceived ?? false) ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="profit">계산서 수령</span>
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="warn-text">계산서 미수령</span>
+                  </>
+                )}
               </div>
               {e.note && <p className="expense-row__note">{e.note}</p>}
             </div>
             <div className="expense-row__amount">{formatKRW(e.amount)}</div>
             <div className="expense-row__actions">
+              {onToggleInvoice && (
+                <button
+                  type="button"
+                  className={`icon-btn invoice-check-inline ${e.invoiceReceived ? 'invoice-check-inline--done' : ''}`}
+                  onClick={() => onToggleInvoice(e.id, !(e.invoiceReceived ?? false))}
+                  aria-label={
+                    e.invoiceReceived ? '계산서 수령됨 — 취소' : '계산서 수령'
+                  }
+                  title={e.invoiceReceived ? '계산서 수령됨' : '계산서 수령'}
+                >
+                  <FileText size={16} />
+                </button>
+              )}
               <button
                 type="button"
                 className="icon-btn"

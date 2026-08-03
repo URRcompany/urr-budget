@@ -36,6 +36,8 @@ function App() {
     updateClientPayment,
     deleteClientPayment,
     toggleClientPaymentPaid,
+    toggleClientPaymentInvoice,
+    toggleExpenseInvoice,
     addLaborPayment,
     updateLaborPayment,
     deleteLaborPayment,
@@ -88,6 +90,12 @@ function App() {
         onDeleteClientPayment={(id) => deleteClientPayment(activeProject.id, id)}
         onToggleClientPaymentPaid={(id, isPaid) =>
           toggleClientPaymentPaid(activeProject.id, id, isPaid)
+        }
+        onToggleClientPaymentInvoice={(id, issued) =>
+          toggleClientPaymentInvoice(activeProject.id, id, issued)
+        }
+        onToggleExpenseInvoice={(id, received) =>
+          toggleExpenseInvoice(activeProject.id, id, received)
         }
         onAddLaborPayment={(data) => addLaborPayment(activeProject.id, data)}
         onUpdateLaborPayment={(id, data) =>

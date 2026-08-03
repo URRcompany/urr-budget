@@ -13,6 +13,8 @@ export interface Expense {
   date: string
   note: string
   vendor: string
+  /** 거래처 계산서·세금계산서 수령 여부 */
+  invoiceReceived?: boolean
 }
 
 /** 클라이언트 입금 회차 (계약금·중도금·잔금 등) */
@@ -24,6 +26,9 @@ export interface ClientPayment {
   paidDate: string
   isPaid: boolean
   note: string
+  /** 클라이언트에게 세금계산서 발행 여부 */
+  invoiceIssued?: boolean
+  invoiceDate?: string
 }
 
 /** 스태프·외주 인건비 지급 */
@@ -167,6 +172,7 @@ export function createSampleProjects(): Project[] {
           date: '2026-08-25',
           note: 'Alexa Mini + 프라임 세트',
           vendor: '시네렌탈',
+          invoiceReceived: true,
         },
         {
           id: 'e4',
@@ -212,6 +218,7 @@ export function createSampleProjects(): Project[] {
           date: '2026-09-20',
           note: '60초 컷 기준',
           vendor: '그레이드룸',
+          invoiceReceived: false,
         },
       ],
       clientPayments: [
@@ -223,6 +230,8 @@ export function createSampleProjects(): Project[] {
           paidDate: '2026-07-14',
           isPaid: true,
           note: '계약 체결 후 3영업일',
+          invoiceIssued: true,
+          invoiceDate: '2026-07-14',
         },
         {
           id: 'cp2',
@@ -232,6 +241,8 @@ export function createSampleProjects(): Project[] {
           paidDate: '2026-08-30',
           isPaid: true,
           note: '촬영 전',
+          invoiceIssued: true,
+          invoiceDate: '2026-08-28',
         },
         {
           id: 'cp3',
@@ -241,6 +252,8 @@ export function createSampleProjects(): Project[] {
           paidDate: '',
           isPaid: false,
           note: '납품·검수 후 · 연체 예시',
+          invoiceIssued: false,
+          invoiceDate: '',
         },
       ],
       laborPayments: [

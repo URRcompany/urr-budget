@@ -52,6 +52,8 @@ interface ProjectDetailViewProps {
   onUpdateClientPayment: (id: string, data: Omit<ClientPayment, 'id'>) => void
   onDeleteClientPayment: (id: string) => void
   onToggleClientPaymentPaid: (id: string, isPaid: boolean) => void
+  onToggleClientPaymentInvoice: (id: string, issued: boolean) => void
+  onToggleExpenseInvoice: (id: string, received: boolean) => void
   onAddLaborPayment: (data: Omit<LaborPayment, 'id'>) => void
   onUpdateLaborPayment: (id: string, data: Omit<LaborPayment, 'id'>) => void
   onDeleteLaborPayment: (id: string) => void
@@ -90,6 +92,8 @@ export function ProjectDetailView({
   onUpdateClientPayment,
   onDeleteClientPayment,
   onToggleClientPaymentPaid,
+  onToggleClientPaymentInvoice,
+  onToggleExpenseInvoice,
   onAddLaborPayment,
   onUpdateLaborPayment,
   onDeleteLaborPayment,
@@ -165,6 +169,7 @@ export function ProjectDetailView({
               onUpdate={onUpdateClientPayment}
               onDelete={onDeleteClientPayment}
               onTogglePaid={onToggleClientPaymentPaid}
+              onToggleInvoice={onToggleClientPaymentInvoice}
             />
 
             <LaborPaymentsPanel
@@ -196,8 +201,10 @@ export function ProjectDetailView({
           <section className="section section--expenses main__col">
             <header className="section__head">
               <div>
-                <h2>지출 내역</h2>
-                <p className="muted">{filteredExpenses.length}건</p>
+              <h2>지출 내역</h2>
+              <p className="muted">
+                {filteredExpenses.length}건 · 문서 아이콘으로 계산서 수령 체크
+              </p>
               </div>
               <div className="section__actions">
                 <button
@@ -252,6 +259,7 @@ export function ProjectDetailView({
                 setFormOpen(true)
               }}
               onDelete={onDeleteExpense}
+              onToggleInvoice={onToggleExpenseInvoice}
             />
           </section>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Circle, Plus, Trash2 } from 'lucide-react'
+import { Check, Circle, FileText, Plus, Trash2 } from 'lucide-react'
 import type { ClientPayment } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 import { daysOverdue, isPaymentOverdue } from '../lib/receivables'
@@ -13,6 +13,7 @@ interface ClientPaymentsPanelProps {
   onUpdate: (id: string, data: Omit<ClientPayment, 'id'>) => void
   onDelete: (id: string) => void
   onTogglePaid: (id: string, isPaid: boolean) => void
+  onToggleInvoice: (id: string, issued: boolean) => void
 }
 
 export function ClientPaymentsPanel({
@@ -24,10 +25,12 @@ export function ClientPaymentsPanel({
   onUpdate,
   onDelete,
   onTogglePaid,
+  onToggleInvoice,
 }: ClientPaymentsPanelProps) {
   const [adding, setAdding] = useState(false)
   const pendingCount = payments.filter((p) => !p.isPaid).length
   const overdueCount = payments.filter((p) => isPaymentOverdue(p)).length
+  const unissuedCount = payments.filter((p) => p.isPaid && !(p.invoiceIssued ?? false)).length
   const pct = revenue > 0 ? Math.round((received / revenue) * 100) : 0
 
   return (
@@ -40,6 +43,11 @@ export function ClientPaymentsPanel({
             {overdueCount > 0 && (
               <span className="badge badge--danger payment-panel__badge">
                 연체 {overdueCount}건
+              </span>
+            )}
+            {unissuedCount > 0 && (
+              <span className="badge badge--warn payment-panel__badge">
+                계산서 미발행 {unissuedCount}건
               </span>
             )}
             {pendingCount > 0 && overdueCount === 0 && (
@@ -90,7 +98,7 @@ export function ClientPaymentsPanel({
       {payments.length === 0 ? (
         <div className="empty empty--compact">
           <p>입금 회차가 없습니다.</p>
-          <p className="muted">계약금·중도금·잔금 등을 추가해 입금 여부를 확인하세요.</p>
+          <p className="muted">계약금·중도금·잔금 등을 추가해 입금·계산서 발행을 확인하세요.</p>
         </div>
       ) : (
         <ul className="payment-list">
@@ -99,6 +107,7 @@ export function ClientPaymentsPanel({
               key={p.id}
               payment={p}
               onToggle={() => onTogglePaid(p.id, !p.isPaid)}
+              onToggleInvoice={() => onToggleInvoice(p.id, !p.invoiceIssued)}
               onEdit={() => {
                 const label = prompt('회차명', p.label)
                 if (label == null) return
@@ -126,20 +135,23 @@ export function ClientPaymentsPanel({
 function PaymentRow({
   payment,
   onToggle,
+  onToggleInvoice,
   onEdit,
   onDelete,
 }: {
   payment: ClientPayment
   onToggle: () => void
+  onToggleInvoice: () => void
   onEdit: () => void
   onDelete: () => void
 }) {
   const overdue = isPaymentOverdue(payment)
   const overdueDays = daysOverdue(payment)
+  const needsInvoice = payment.isPaid && !(payment.invoiceIssued ?? false)
 
   return (
     <li
-      className={`payment-row ${payment.isPaid ? 'payment-row--done' : ''} ${overdue ? 'payment-row--overdue' : ''}`}
+      className={`payment-row ${payment.isPaid ? 'payment-row--done' : ''} ${overdue ? 'payment-row--overdue' : ''} ${needsInvoice ? 'payment-row--no-invoice' : ''}`}
     >
       <button
         type="button"
@@ -161,8 +173,32 @@ function PaymentRow({
             : !overdue
               ? '미입금'
               : '미입금'}
+          {payment.invoiceIssued && payment.invoiceDate && (
+            <> · 계산서 {formatDate(payment.invoiceDate)}</>
+          )}
+          {needsInvoice && (
+            <strong className="warn-text"> · 계산서 미발행</strong>
+          )}
           {payment.note && <> · {payment.note}</>}
         </span>
+      </button>
+      <button
+        type="button"
+        className={`invoice-check ${payment.invoiceIssued ? 'invoice-check--done' : ''} ${!payment.isPaid ? 'invoice-check--disabled' : ''}`}
+        onClick={onToggleInvoice}
+        disabled={!payment.isPaid}
+        title={
+          payment.isPaid
+            ? payment.invoiceIssued
+              ? '계산서 발행 완료'
+              : '계산서 발행 완료로 표시'
+            : '입금 후 계산서 발행 체크 가능'
+        }
+        aria-label={
+          payment.invoiceIssued ? '계산서 발행됨 — 취소' : '계산서 발행 완료'
+        }
+      >
+        <FileText size={15} />
       </button>
       <span className="payment-row__amount">{formatKRW(payment.amount)}</span>
       <button
@@ -197,6 +233,8 @@ function PaymentAddForm({
           paidDate: '',
           isPaid: false,
           note: String(fd.get('note') || ''),
+          invoiceIssued: false,
+          invoiceDate: '',
         })
       }}
     >
