@@ -15,6 +15,29 @@ export interface Expense {
   vendor: string
 }
 
+/** 클라이언트 입금 회차 (계약금·중도금·잔금 등) */
+export interface ClientPayment {
+  id: string
+  label: string
+  amount: number
+  dueDate: string
+  paidDate: string
+  isPaid: boolean
+  note: string
+}
+
+/** 스태프·외주 인건비 지급 */
+export interface LaborPayment {
+  id: string
+  name: string
+  role: string
+  amount: number
+  workDate: string
+  paidDate: string
+  isPaid: boolean
+  note: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -26,11 +49,13 @@ export interface Project {
   totalBudget: number
   categories: Category[]
   expenses: Expense[]
+  clientPayments: ClientPayment[]
+  laborPayments: LaborPayment[]
   createdAt: string
 }
 
 export interface AppStore {
-  version: 2
+  version: 3
   projects: Project[]
   activeProjectId: string | null
 }
@@ -84,6 +109,8 @@ export function createEmptyProject(partial?: Partial<Project>): Project {
     totalBudget: 0,
     categories: createDefaultCategories(),
     expenses: [],
+    clientPayments: [],
+    laborPayments: [],
     createdAt: now,
     ...partial,
   }
@@ -185,6 +212,77 @@ export function createSampleProjects(): Project[] {
           vendor: '그레이드룸',
         },
       ],
+      clientPayments: [
+        {
+          id: 'cp1',
+          label: '계약금',
+          amount: 10_500_000,
+          dueDate: '2026-07-15',
+          paidDate: '2026-07-14',
+          isPaid: true,
+          note: '계약 체결 후 3영업일',
+        },
+        {
+          id: 'cp2',
+          label: '1차 중도금',
+          amount: 14_000_000,
+          dueDate: '2026-09-01',
+          paidDate: '2026-08-30',
+          isPaid: true,
+          note: '촬영 전',
+        },
+        {
+          id: 'cp3',
+          label: '잔금',
+          amount: 10_500_000,
+          dueDate: '2026-10-15',
+          paidDate: '',
+          isPaid: false,
+          note: '납품·검수 후',
+        },
+      ],
+      laborPayments: [
+        {
+          id: 'lp1',
+          name: '김민수',
+          role: 'DP',
+          amount: 1_200_000,
+          workDate: '2026-09-12',
+          paidDate: '',
+          isPaid: false,
+          note: '촬영 1일',
+        },
+        {
+          id: 'lp2',
+          name: '박조명',
+          role: '조명 감독',
+          amount: 900_000,
+          workDate: '2026-09-12',
+          paidDate: '2026-09-15',
+          isPaid: true,
+          note: '',
+        },
+        {
+          id: 'lp3',
+          name: '이편집',
+          role: '편집자',
+          amount: 800_000,
+          workDate: '2026-09-20',
+          paidDate: '',
+          isPaid: false,
+          note: '러프컷 후 지급 예정',
+        },
+        {
+          id: 'lp4',
+          name: '최음향',
+          role: '사운드',
+          amount: 500_000,
+          workDate: '2026-09-12',
+          paidDate: '2026-09-13',
+          isPaid: true,
+          note: '',
+        },
+      ],
     },
     {
       id: 'p_sample_mv',
@@ -235,8 +333,104 @@ export function createSampleProjects(): Project[] {
           vendor: '시네렌탈',
         },
       ],
+      clientPayments: [
+        {
+          id: 'cp4',
+          label: '계약금',
+          amount: 5_400_000,
+          dueDate: '2026-08-01',
+          paidDate: '2026-08-01',
+          isPaid: true,
+          note: '',
+        },
+        {
+          id: 'cp5',
+          label: '잔금',
+          amount: 12_600_000,
+          dueDate: '2026-11-01',
+          paidDate: '',
+          isPaid: false,
+          note: '마스터 납품 후',
+        },
+      ],
+      laborPayments: [
+        {
+          id: 'lp5',
+          name: '정카메라',
+          role: '카메라 오퍼레이터',
+          amount: 1_200_000,
+          workDate: '2026-10-05',
+          paidDate: '',
+          isPaid: false,
+          note: '',
+        },
+        {
+          id: 'lp6',
+          name: '한조명',
+          role: '조명팀',
+          amount: 700_000,
+          workDate: '2026-10-05',
+          paidDate: '',
+          isPaid: false,
+          note: '야간 촬영',
+        },
+      ],
     },
   ]
+}
+
+export function projectReceived(project: Project): number {
+  return project.clientPayments
+    .filter((p) => p.isPaid)
+    .reduce((sum, p) => sum + p.amount, 0)
+}
+
+export function projectReceivableOutstanding(project: Project): number {
+  return Math.max(project.revenue - projectReceived(project), 0)
+}
+
+export function projectClientPaymentProgress(project: Project): {
+  paid: number
+  total: number
+  pending: number
+  allPaid: boolean
+} {
+  const total = project.clientPayments.reduce((s, p) => s + p.amount, 0)
+  const paid = project.clientPayments
+    .filter((p) => p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  return {
+    paid,
+    total: total || project.revenue,
+    pending: project.clientPayments.filter((p) => !p.isPaid).length,
+    allPaid:
+      project.clientPayments.length > 0 &&
+      project.clientPayments.every((p) => p.isPaid),
+  }
+}
+
+export function projectLaborStats(project: Project): {
+  total: number
+  paid: number
+  unpaid: number
+  paidCount: number
+  unpaidCount: number
+  allPaid: boolean
+} {
+  const total = project.laborPayments.reduce((s, p) => s + p.amount, 0)
+  const paid = project.laborPayments
+    .filter((p) => p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  const paidCount = project.laborPayments.filter((p) => p.isPaid).length
+  const unpaidCount = project.laborPayments.filter((p) => !p.isPaid).length
+  return {
+    total,
+    paid,
+    unpaid: total - paid,
+    paidCount,
+    unpaidCount,
+    allPaid: project.laborPayments.length > 0 && unpaidCount === 0,
+  }
 }
 
 export function projectSpent(project: Project): number {

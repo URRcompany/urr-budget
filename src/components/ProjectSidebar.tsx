@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { FolderPlus, RotateCcw, Trash2 } from 'lucide-react'
 import {
+  projectClientPaymentProgress,
+  projectLaborStats,
   projectNetProfit,
   projectSpent,
   type Project,
@@ -144,6 +146,8 @@ export function ProjectSidebar({
             const spent = projectSpent(p)
             const net = projectNetProfit(p)
             const active = p.id === activeProjectId
+            const clientPay = projectClientPaymentProgress(p)
+            const labor = projectLaborStats(p)
             return (
               <div
                 key={p.id}
@@ -164,6 +168,19 @@ export function ProjectSidebar({
                       {formatKRW(net)}
                     </span>
                     <span className="muted">집행 {formatCompactKRW(spent)}</span>
+                  </span>
+                  <span className="sidebar-item__flags">
+                    {!clientPay.allPaid && p.clientPayments.length > 0 && (
+                      <span className="sidebar-flag sidebar-flag--warn">미수</span>
+                    )}
+                    {clientPay.allPaid && p.clientPayments.length > 0 && (
+                      <span className="sidebar-flag sidebar-flag--ok">입금완료</span>
+                    )}
+                    {labor.unpaidCount > 0 && (
+                      <span className="sidebar-flag sidebar-flag--warn">
+                        미지급 {labor.unpaidCount}
+                      </span>
+                    )}
                   </span>
                 </button>
                 <button

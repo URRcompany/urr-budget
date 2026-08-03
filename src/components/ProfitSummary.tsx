@@ -8,6 +8,8 @@ interface ProfitSummaryProps {
   margin: number | null
   budget: number
   remaining: number
+  received: number
+  outstanding: number
 }
 
 export function ProfitSummary({
@@ -17,6 +19,8 @@ export function ProfitSummary({
   margin,
   budget,
   remaining,
+  received,
+  outstanding,
 }: ProfitSummaryProps) {
   const positive = netProfit >= 0
 
@@ -51,6 +55,16 @@ export function ProfitSummary({
           <div>
             <dt>계약·매출</dt>
             <dd>{formatKRW(revenue)}</dd>
+          </div>
+          <div>
+            <dt>입금 완료</dt>
+            <dd className="profit">{formatKRW(received)}</dd>
+          </div>
+          <div>
+            <dt>미수금</dt>
+            <dd className={outstanding > 0 ? 'warn-text' : 'profit'}>
+              {formatKRW(outstanding)}
+            </dd>
           </div>
           <div>
             <dt>총 집행 비용</dt>

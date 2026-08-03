@@ -96,6 +96,10 @@ p {
   color: var(--teal);
 }
 
+.warn-text {
+  color: var(--warn);
+}
+
 .app {
   position: relative;
   z-index: 1;
@@ -375,6 +379,17 @@ p {
   color: var(--warn);
 }
 
+.badge--ok {
+  background: rgba(42, 111, 124, 0.12);
+  color: var(--teal);
+}
+
+.project-card__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
 .category-card__bars {
   position: relative;
   height: 8px;
@@ -545,6 +560,178 @@ p {
 
 .empty p + p {
   margin-top: 0.35rem;
+}
+
+.empty--compact {
+  padding: 1.25rem 1rem;
+}
+
+/* —— Payment tracking —— */
+.payment-panel__badge {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.payment-summary {
+  margin-bottom: 1rem;
+}
+
+.payment-summary__meter {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(20, 24, 31, 0.08);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.payment-summary__meter--labor .payment-summary__fill {
+  background: linear-gradient(90deg, #6aabbb, var(--teal));
+}
+
+.payment-summary__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e8a84a, var(--accent));
+  transition: width 0.35s ease;
+}
+
+.payment-summary__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.payment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.payment-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.payment-row--done {
+  background: rgba(42, 111, 124, 0.06);
+  border-color: rgba(42, 111, 124, 0.18);
+}
+
+.payment-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.payment-check:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.payment-check--done {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+
+.payment-row__main {
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.payment-row__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.payment-row__role {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0.1rem 0.4rem;
+  border-radius: 5px;
+  background: rgba(20, 24, 31, 0.06);
+}
+
+.payment-row__meta {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.payment-row__amount {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.payment-add-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.payment-add-form input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  background: #fff;
+}
+
+.sidebar-item__flags {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.sidebar-flag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+}
+
+.sidebar-flag--warn {
+  background: rgba(168, 107, 26, 0.2);
+  color: #f0c896;
+}
+
+.sidebar-flag--ok {
+  background: rgba(42, 111, 124, 0.25);
+  color: #8fd0c0;
 }
 
 /* —— Buttons & form —— */
@@ -1442,6 +1629,10 @@ p {
 
   .profit-panel__grid {
     grid-template-columns: 1fr;
+  }
+
+  .profit-facts {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .desktop-main .section--expenses {

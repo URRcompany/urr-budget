@@ -30,6 +30,14 @@ function App() {
     updateExpense,
     deleteExpense,
     resetSamples,
+    addClientPayment,
+    updateClientPayment,
+    deleteClientPayment,
+    toggleClientPaymentPaid,
+    addLaborPayment,
+    updateLaborPayment,
+    deleteLaborPayment,
+    toggleLaborPaymentPaid,
     categoryOf,
   } = useStore()
 
@@ -48,6 +56,9 @@ function App() {
         usageRatio={projectStats.usageRatio}
         netProfit={projectStats.netProfit}
         margin={projectStats.margin}
+        received={projectStats.received}
+        outstanding={projectStats.outstanding}
+        laborStats={projectStats.laborStats}
         byCategory={projectStats.byCategory}
         filteredExpenses={projectStats.filteredExpenses}
         filter={filter}
@@ -68,6 +79,22 @@ function App() {
           updateExpense(activeProject.id, id, data)
         }
         onDeleteExpense={(id) => deleteExpense(activeProject.id, id)}
+        onAddClientPayment={(data) => addClientPayment(activeProject.id, data)}
+        onUpdateClientPayment={(id, data) =>
+          updateClientPayment(activeProject.id, id, data)
+        }
+        onDeleteClientPayment={(id) => deleteClientPayment(activeProject.id, id)}
+        onToggleClientPaymentPaid={(id, isPaid) =>
+          toggleClientPaymentPaid(activeProject.id, id, isPaid)
+        }
+        onAddLaborPayment={(data) => addLaborPayment(activeProject.id, data)}
+        onUpdateLaborPayment={(id, data) =>
+          updateLaborPayment(activeProject.id, id, data)
+        }
+        onDeleteLaborPayment={(id) => deleteLaborPayment(activeProject.id, id)}
+        onToggleLaborPaymentPaid={(id, isPaid) =>
+          toggleLaborPaymentPaid(activeProject.id, id, isPaid)
+        }
         categoryOf={categoryOf}
       />
     ) : null

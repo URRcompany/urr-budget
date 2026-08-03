@@ -1,8 +1,10 @@
 import { useState, type CSSProperties } from 'react'
 import { Plus } from 'lucide-react'
-import type { Category, Expense, Project } from '../types'
+import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
 import { BudgetHero } from './BudgetHero'
 import { ProfitSummary } from './ProfitSummary'
+import { ClientPaymentsPanel } from './ClientPaymentsPanel'
+import { LaborPaymentsPanel } from './LaborPaymentsPanel'
 import { CategoryBreakdown } from './CategoryBreakdown'
 import { ExpenseList } from './ExpenseList'
 import { ExpenseForm } from './ExpenseForm'
@@ -14,6 +16,16 @@ interface ProjectDetailViewProps {
   usageRatio: number
   netProfit: number
   margin: number | null
+  received: number
+  outstanding: number
+  laborStats: {
+    total: number
+    paid: number
+    unpaid: number
+    paidCount: number
+    unpaidCount: number
+    allPaid: boolean
+  }
   byCategory: Array<Category & { spent: number }>
   filteredExpenses: Expense[]
   filter: string | 'all'
@@ -32,6 +44,14 @@ interface ProjectDetailViewProps {
   onAddExpense: (data: Omit<Expense, 'id'>) => void
   onUpdateExpense: (id: string, data: Omit<Expense, 'id'>) => void
   onDeleteExpense: (id: string) => void
+  onAddClientPayment: (data: Omit<ClientPayment, 'id'>) => void
+  onUpdateClientPayment: (id: string, data: Omit<ClientPayment, 'id'>) => void
+  onDeleteClientPayment: (id: string) => void
+  onToggleClientPaymentPaid: (id: string, isPaid: boolean) => void
+  onAddLaborPayment: (data: Omit<LaborPayment, 'id'>) => void
+  onUpdateLaborPayment: (id: string, data: Omit<LaborPayment, 'id'>) => void
+  onDeleteLaborPayment: (id: string) => void
+  onToggleLaborPaymentPaid: (id: string, isPaid: boolean) => void
   categoryOf: (id: string) => Category | undefined
 }
 
@@ -42,6 +62,9 @@ export function ProjectDetailView({
   usageRatio,
   netProfit,
   margin,
+  received,
+  outstanding,
+  laborStats,
   byCategory,
   filteredExpenses,
   filter,
@@ -56,6 +79,14 @@ export function ProjectDetailView({
   onAddExpense,
   onUpdateExpense,
   onDeleteExpense,
+  onAddClientPayment,
+  onUpdateClientPayment,
+  onDeleteClientPayment,
+  onToggleClientPaymentPaid,
+  onAddLaborPayment,
+  onUpdateLaborPayment,
+  onDeleteLaborPayment,
+  onToggleLaborPaymentPaid,
   categoryOf,
 }: ProjectDetailViewProps) {
   const [formOpen, setFormOpen] = useState(false)
@@ -84,6 +115,28 @@ export function ProjectDetailView({
               margin={margin}
               budget={project.totalBudget}
               remaining={remaining}
+              received={received}
+              outstanding={outstanding}
+            />
+
+            <ClientPaymentsPanel
+              payments={project.clientPayments}
+              revenue={project.revenue}
+              received={received}
+              outstanding={outstanding}
+              onAdd={onAddClientPayment}
+              onUpdate={onUpdateClientPayment}
+              onDelete={onDeleteClientPayment}
+              onTogglePaid={onToggleClientPaymentPaid}
+            />
+
+            <LaborPaymentsPanel
+              payments={project.laborPayments}
+              stats={laborStats}
+              onAdd={onAddLaborPayment}
+              onUpdate={onUpdateLaborPayment}
+              onDelete={onDeleteLaborPayment}
+              onTogglePaid={onToggleLaborPaymentPaid}
             />
 
             <section className="section section--categories">

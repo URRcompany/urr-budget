@@ -3,25 +3,56 @@ import {
   CATEGORY_PALETTE,
   createEmptyProject,
   createSampleProjects,
+  projectLaborStats,
   projectMargin,
   projectNetProfit,
+  projectReceived,
+  projectReceivableOutstanding,
   projectSpent,
   type AppStore,
   type Category,
+  type ClientPayment,
   type Expense,
+  type LaborPayment,
   type Project,
 } from '../types'
 import { uid } from '../lib/format'
 
-const STORAGE_KEY = 'reelbudget.store.v2'
+const STORAGE_KEY = 'reelbudget.store.v3'
+const STORAGE_KEY_V2 = 'reelbudget.store.v2'
 const LEGACY_KEY = 'reelbudget.project.v1'
+
+function normalizeProject(p: Partial<Project> & { name: string }): Project {
+  const base = createEmptyProject()
+  return {
+    ...base,
+    ...p,
+    categories: p.categories?.length ? p.categories : base.categories,
+    expenses: p.expenses ?? [],
+    clientPayments: p.clientPayments ?? [],
+    laborPayments: p.laborPayments ?? [],
+  }
+}
 
 function createInitialStore(): AppStore {
   const projects = createSampleProjects()
   return {
-    version: 2,
+    version: 3,
     projects,
     activeProjectId: null,
+  }
+}
+
+function migrateToV3(
+  projects: Partial<Project>[],
+  activeProjectId: string | null,
+): AppStore {
+  return {
+    version: 3,
+    projects: projects
+      .filter((p): p is Partial<Project> & { name: string } => Boolean(p.name))
+      .map((p) => normalizeProject(p)),
+    activeProjectId,
   }
 }
 
@@ -33,18 +64,16 @@ function migrateLegacy(raw: string): AppStore | null {
       categories?: Category[]
     }
     if (!legacy.name) return null
-    const project = createEmptyProject({
+    const project = normalizeProject({
       name: legacy.name,
       client: legacy.client ?? '',
       shootDate: legacy.shootDate ?? '',
       revenue: legacy.revenue ?? Math.round((legacy.totalBudget ?? 0) * 1.25),
       totalBudget: legacy.totalBudget ?? 0,
-      categories: legacy.categories?.length
-        ? legacy.categories
-        : createEmptyProject().categories,
+      categories: legacy.categories?.length ? legacy.categories : undefined,
       expenses: legacy.expenses ?? [],
     })
-    return { version: 2, projects: [project], activeProjectId: null }
+    return { version: 3, projects: [project], activeProjectId: null }
   } catch {
     return null
   }
@@ -55,8 +84,23 @@ function loadStore(): AppStore {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as AppStore
+      if (parsed?.version === 3 && Array.isArray(parsed.projects)) {
+        return {
+          ...parsed,
+          projects: parsed.projects.map((p) => normalizeProject(p)),
+        }
+      }
+    }
+    const v2raw = localStorage.getItem(STORAGE_KEY_V2)
+    if (v2raw) {
+      const parsed = JSON.parse(v2raw) as {
+        version: 2
+        projects: Partial<Project>[]
+        activeProjectId: string | null
+      }
       if (parsed?.version === 2 && Array.isArray(parsed.projects)) {
-        return parsed
+        localStorage.removeItem(STORAGE_KEY_V2)
+        return migrateToV3(parsed.projects, parsed.activeProjectId)
       }
     }
     const legacy = localStorage.getItem(LEGACY_KEY)
@@ -292,9 +336,123 @@ export function useStore() {
 
   const resetSamples = useCallback(() => {
     const projects = createSampleProjects()
-    setStore({ version: 2, projects, activeProjectId: null })
+    setStore({ version: 3, projects, activeProjectId: null })
     setFilter('all')
   }, [])
+
+  const patchProject = useCallback(
+    (projectId: string, updater: (p: Project) => Project) => {
+      setStore((s) => ({
+        ...s,
+        projects: s.projects.map((p) => (p.id === projectId ? updater(p) : p)),
+      }))
+    },
+    [],
+  )
+
+  const addClientPayment = useCallback(
+    (projectId: string, data: Omit<ClientPayment, 'id'>) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: [{ ...data, id: uid() }, ...p.clientPayments],
+      }))
+    },
+    [patchProject],
+  )
+
+  const updateClientPayment = useCallback(
+    (projectId: string, paymentId: string, data: Omit<ClientPayment, 'id'>) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: p.clientPayments.map((cp) =>
+          cp.id === paymentId ? { ...data, id: paymentId } : cp,
+        ),
+      }))
+    },
+    [patchProject],
+  )
+
+  const deleteClientPayment = useCallback(
+    (projectId: string, paymentId: string) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: p.clientPayments.filter((cp) => cp.id !== paymentId),
+      }))
+    },
+    [patchProject],
+  )
+
+  const toggleClientPaymentPaid = useCallback(
+    (projectId: string, paymentId: string, isPaid: boolean) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: p.clientPayments.map((cp) =>
+          cp.id === paymentId
+            ? {
+                ...cp,
+                isPaid,
+                paidDate: isPaid
+                  ? cp.paidDate || new Date().toISOString().slice(0, 10)
+                  : '',
+              }
+            : cp,
+        ),
+      }))
+    },
+    [patchProject],
+  )
+
+  const addLaborPayment = useCallback(
+    (projectId: string, data: Omit<LaborPayment, 'id'>) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        laborPayments: [{ ...data, id: uid() }, ...p.laborPayments],
+      }))
+    },
+    [patchProject],
+  )
+
+  const updateLaborPayment = useCallback(
+    (projectId: string, paymentId: string, data: Omit<LaborPayment, 'id'>) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        laborPayments: p.laborPayments.map((lp) =>
+          lp.id === paymentId ? { ...data, id: paymentId } : lp,
+        ),
+      }))
+    },
+    [patchProject],
+  )
+
+  const deleteLaborPayment = useCallback(
+    (projectId: string, paymentId: string) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        laborPayments: p.laborPayments.filter((lp) => lp.id !== paymentId),
+      }))
+    },
+    [patchProject],
+  )
+
+  const toggleLaborPaymentPaid = useCallback(
+    (projectId: string, paymentId: string, isPaid: boolean) => {
+      patchProject(projectId, (p) => ({
+        ...p,
+        laborPayments: p.laborPayments.map((lp) =>
+          lp.id === paymentId
+            ? {
+                ...lp,
+                isPaid,
+                paidDate: isPaid
+                  ? lp.paidDate || new Date().toISOString().slice(0, 10)
+                  : '',
+              }
+            : lp,
+        ),
+      }))
+    },
+    [patchProject],
+  )
 
   const projectStats = useMemo(() => {
     if (!activeProject) return null
@@ -306,6 +464,9 @@ export function useStore() {
         : 0
     const netProfit = projectNetProfit(activeProject)
     const margin = projectMargin(activeProject)
+    const received = projectReceived(activeProject)
+    const outstanding = projectReceivableOutstanding(activeProject)
+    const laborStats = projectLaborStats(activeProject)
     const byCategory = activeProject.categories.map((c) => ({
       ...c,
       spent: activeProject.expenses
@@ -326,6 +487,9 @@ export function useStore() {
       usageRatio,
       netProfit,
       margin,
+      received,
+      outstanding,
+      laborStats,
       byCategory,
       filteredExpenses,
     }
@@ -358,6 +522,14 @@ export function useStore() {
     updateExpense,
     deleteExpense,
     resetSamples,
+    addClientPayment,
+    updateClientPayment,
+    deleteClientPayment,
+    toggleClientPaymentPaid,
+    addLaborPayment,
+    updateLaborPayment,
+    deleteLaborPayment,
+    toggleLaborPaymentPaid,
     categoryOf,
   }
 }

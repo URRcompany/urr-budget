@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { FolderPlus, RotateCcw, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import {
+  projectClientPaymentProgress,
+  projectLaborStats,
   projectMargin,
   projectNetProfit,
   projectSpent,
@@ -127,6 +129,8 @@ export function ProjectList({
               const spent = projectSpent(p)
               const net = projectNetProfit(p)
               const margin = projectMargin(p)
+              const clientPay = projectClientPaymentProgress(p)
+              const labor = projectLaborStats(p)
               const budgetPct =
                 p.totalBudget > 0
                   ? Math.min(Math.round((spent / p.totalBudget) * 100), 999)
@@ -170,6 +174,19 @@ export function ProjectList({
                     <div className="project-card__foot">
                       <span className="muted">
                         {p.shootDate ? formatDate(p.shootDate) : '촬영일 미정'}
+                      </span>
+                      <span className="project-card__flags">
+                        {!clientPay.allPaid && p.clientPayments.length > 0 && (
+                          <span className="badge badge--warn">미수</span>
+                        )}
+                        {labor.unpaidCount > 0 && (
+                          <span className="badge badge--warn">
+                            미지급 {labor.unpaidCount}
+                          </span>
+                        )}
+                        {clientPay.allPaid && p.clientPayments.length > 0 && (
+                          <span className="badge badge--ok">입금완료</span>
+                        )}
                       </span>
                       <span className="muted">
                         예산 {budgetPct}%
