@@ -1,24 +1,35 @@
 import { useState } from 'react'
-import { LayoutGrid, PieChart, RotateCcw, Sparkles } from 'lucide-react'
-import type { Category } from '../types'
+import { Clapperboard, LayoutGrid, Mic2, PieChart, RotateCcw, Sparkles } from 'lucide-react'
+import type { BudgetPresetId, Category } from '../types'
 import {
-  allocateByDefaultPreset,
   allocateEqually,
   categoryBudgetAllocation,
   fillUnallocated,
 } from '../lib/budget'
+import { allocateByBudgetPreset, BUDGET_PRESETS } from '../lib/categoryPresets'
 import { formatKRW } from '../lib/format'
+
+const PRESET_ICONS: Record<BudgetPresetId, typeof PieChart> = {
+  general: PieChart,
+  cf: Clapperboard,
+  mv: Mic2,
+  docu: LayoutGrid,
+}
 
 interface BudgetAllocatorProps {
   totalBudget: number
   categories: Category[]
+  budgetPreset?: BudgetPresetId
   onApplyAllocations: (allocations: Record<string, number>) => void
+  onPresetSelect: (presetId: BudgetPresetId) => void
 }
 
 export function BudgetAllocator({
   totalBudget,
   categories,
+  budgetPreset = 'general',
   onApplyAllocations,
+  onPresetSelect,
 }: BudgetAllocatorProps) {
   const [expanded, setExpanded] = useState(false)
   const allocation = categoryBudgetAllocation(totalBudget, categories)
@@ -28,8 +39,39 @@ export function BudgetAllocator({
     onApplyAllocations(allocations)
   }
 
+  const handleTypePreset = (id: BudgetPresetId) => {
+    onPresetSelect(id)
+    if (hasBudget) {
+      applyPreset(allocateByBudgetPreset(totalBudget, categories, id))
+    }
+  }
+
   return (
     <div className="budget-allocator">
+      <div className="budget-allocator__types">
+        <span className="budget-allocator__types-label">프로젝트 유형</span>
+        <div className="preset-chips" role="group" aria-label="예산 프리셋">
+          {BUDGET_PRESETS.map((p) => {
+            const Icon = PRESET_ICONS[p.id]
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`preset-chip ${budgetPreset === p.id ? 'preset-chip--active' : ''}`}
+                title={p.description}
+                onClick={() => handleTypePreset(p.id)}
+              >
+                <Icon size={14} aria-hidden />
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+        <p className="muted budget-allocator__preset-desc">
+          {BUDGET_PRESETS.find((p) => p.id === budgetPreset)?.description}
+        </p>
+      </div>
+
       <div
         className={`allocation-banner allocation-banner--budget ${allocation.matchesBudget ? 'allocation-banner--ok' : hasBudget ? 'allocation-banner--warn' : ''}`}
         role="status"
@@ -63,7 +105,7 @@ export function BudgetAllocator({
 
         {!hasBudget && (
           <p className="budget-allocator__hint muted">
-            프로젝트 설정에서 제작 예산을 입력하면 카테고리에 배분할 수 있습니다.
+            프로젝트 설정에서 제작 예산을 입력하면 선택한 유형 비율로 배분할 수 있습니다.
           </p>
         )}
       </div>
@@ -73,10 +115,12 @@ export function BudgetAllocator({
           <button
             type="button"
             className="btn btn--ghost btn--sm"
-            onClick={() => applyPreset(allocateByDefaultPreset(totalBudget, categories))}
+            onClick={() =>
+              applyPreset(allocateByBudgetPreset(totalBudget, categories, budgetPreset))
+            }
           >
             <PieChart size={15} />
-            견적 비율 적용
+            유형 비율 적용
           </button>
           <button
             type="button"

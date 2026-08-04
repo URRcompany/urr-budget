@@ -17,6 +17,7 @@ import {
 } from '../types'
 import { uid } from '../lib/format'
 import { monthKey } from '../lib/ledger'
+import { normalizeExpenseTaxFields } from '../lib/vat'
 
 const STORAGE_KEY = 'reelbudget.store.v3'
 const STORAGE_KEY_V2 = 'reelbudget.store.v2'
@@ -25,7 +26,7 @@ const LEGACY_KEY = 'reelbudget.project.v1'
 const SAMPLE_PROJECT_IDS = new Set(['p_sample_dawn', 'p_sample_mv'])
 
 function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>): Expense {
-  return {
+  const base = {
     id: e.id,
     title: e.title,
     amount: e.amount,
@@ -34,7 +35,14 @@ function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | '
     note: e.note ?? '',
     vendor: e.vendor ?? '',
     invoiceReceived: e.invoiceReceived ?? false,
+    vatMode: e.vatMode ?? 'included',
+    supplyAmount: e.supplyAmount,
+    vatAmount: e.vatAmount,
+    receiptDataUrl: e.receiptDataUrl ?? '',
+    receiptFileName: e.receiptFileName ?? '',
   }
+  const tax = normalizeExpenseTaxFields(base)
+  return { ...base, ...tax }
 }
 
 function normalizeClientPayment(
@@ -573,6 +581,7 @@ export function useStore() {
                 note: [lp.role, lp.note].filter(Boolean).join(' · '),
                 vendor: lp.name,
                 invoiceReceived: false,
+                vatMode: 'included',
               },
               ...p.expenses,
             ]

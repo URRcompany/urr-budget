@@ -13,6 +13,7 @@ import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
 import { OverdueAlert } from './OverdueAlert'
 import { exportProjectCSV } from '../lib/export'
+import { exportQuotationPDF } from '../lib/quotation'
 
 type DetailTab = 'overview' | 'expenses' | 'payments' | 'ledger'
 
@@ -47,7 +48,7 @@ interface ProjectDetailViewProps {
   onBack: () => void
   onUpdateProject: (
     patch: Partial<
-      Pick<Project, 'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget'>
+      Pick<Project, 'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget' | 'budgetPreset'>
     >,
   ) => void
   onUpdateCategoryPlanned: (id: string, planned: number) => void
@@ -167,10 +168,18 @@ export function ProjectDetailView({
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
+                onClick={() => exportQuotationPDF(project)}
+              >
+                <Download size={15} />
+                견적서 PDF
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
                 onClick={() => exportProjectCSV(project)}
               >
                 <Download size={15} />
-                프로젝트 CSV 내보내기
+                프로젝트 CSV
               </button>
             </div>
 
@@ -198,9 +207,13 @@ export function ProjectDetailView({
               <CategoryBreakdown
                 totalBudget={project.totalBudget}
                 categories={byCategory}
+                budgetPreset={project.budgetPreset ?? 'general'}
                 laborCommitted={laborStats.total}
                 onUpdatePlanned={onUpdateCategoryPlanned}
                 onApplyAllocations={onApplyCategoryAllocations}
+                onPresetSelect={(presetId) =>
+                  onUpdateProject({ budgetPreset: presetId })
+                }
                 onAddCategory={onAddCategory}
                 onRenameCategory={onRenameCategory}
                 onDeleteCategory={onDeleteCategory}

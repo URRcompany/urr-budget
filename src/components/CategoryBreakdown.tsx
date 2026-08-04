@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import type { Category } from '../types'
+import type { BudgetPresetId, Category } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
 import { CategoryRenameForm } from './CategoryRenameForm'
 import { BudgetAllocator } from './BudgetAllocator'
@@ -8,9 +8,11 @@ import { BudgetAllocator } from './BudgetAllocator'
 interface CategoryBreakdownProps {
   totalBudget: number
   categories: Array<Category & { spent: number }>
+  budgetPreset?: BudgetPresetId
   laborCommitted?: number
   onUpdatePlanned: (id: string, planned: number) => void
   onApplyAllocations: (allocations: Record<string, number>) => void
+  onPresetSelect: (presetId: BudgetPresetId) => void
   onAddCategory: (name: string) => void
   onRenameCategory: (id: string, name: string) => void
   onDeleteCategory: (id: string) => void
@@ -19,9 +21,11 @@ interface CategoryBreakdownProps {
 export function CategoryBreakdown({
   totalBudget,
   categories,
+  budgetPreset,
   laborCommitted = 0,
   onUpdatePlanned,
   onApplyAllocations,
+  onPresetSelect,
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
@@ -39,7 +43,9 @@ export function CategoryBreakdown({
       <BudgetAllocator
         totalBudget={totalBudget}
         categories={categories}
+        budgetPreset={budgetPreset}
         onApplyAllocations={onApplyAllocations}
+        onPresetSelect={onPresetSelect}
       />
 
       <div className="category-grid">

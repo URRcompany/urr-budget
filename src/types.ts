@@ -15,6 +15,15 @@ export interface Expense {
   vendor: string
   /** 거래처 계산서·세금계산서 수령 여부 */
   invoiceReceived?: boolean
+  /** 부가세 포함 / 별도 / 면세 */
+  vatMode?: 'included' | 'separate' | 'exempt'
+  /** 공급가액 */
+  supplyAmount?: number
+  /** 부가세 (10%) */
+  vatAmount?: number
+  /** 영수증·견적서 이미지 (JPEG data URL) */
+  receiptDataUrl?: string
+  receiptFileName?: string
 }
 
 /** 클라이언트 입금 회차 (계약금·중도금·잔금 등) */
@@ -45,6 +54,9 @@ export interface LaborPayment {
   expenseId?: string
 }
 
+/** 예산 배분 프리셋 */
+export type BudgetPresetId = 'general' | 'cf' | 'mv' | 'docu'
+
 export interface Project {
   id: string
   name: string
@@ -54,6 +66,8 @@ export interface Project {
   revenue: number
   /** 제작 예산 한도 */
   totalBudget: number
+  /** 예산 배분 프리셋 (CF/MV/다큐 등) */
+  budgetPreset?: BudgetPresetId
   categories: Category[]
   expenses: Expense[]
   clientPayments: ClientPayment[]
@@ -114,6 +128,7 @@ export function createEmptyProject(partial?: Partial<Project>): Project {
     shootDate: '',
     revenue: 0,
     totalBudget: 0,
+    budgetPreset: 'general',
     categories: createDefaultCategories(),
     expenses: [],
     clientPayments: [],

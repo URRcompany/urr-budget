@@ -1,6 +1,7 @@
-import { FileText, Link2, Pencil, Trash2 } from 'lucide-react'
+import { FileText, Image, Link2, Pencil, Trash2 } from 'lucide-react'
 import type { Category, Expense } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
 
 interface ExpenseListProps {
   expenses: Expense[]
@@ -33,6 +34,8 @@ export function ExpenseList({
       {expenses.map((e, i) => {
         const cat = categoryOf(e.categoryId)
         const isLinked = linkedExpenseIds?.has(e.id) ?? false
+        const tax = resolveExpenseTax(e)
+        const hasReceipt = Boolean(e.receiptDataUrl)
         return (
           <li
             key={e.id}
@@ -75,6 +78,24 @@ export function ExpenseList({
                     <span className="warn-text">계산서 미수령</span>
                   </>
                 )}
+                {tax.vat > 0 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>VAT {formatKRW(tax.vat)}</span>
+                  </>
+                )}
+                {e.vatMode && e.vatMode !== 'included' && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{vatModeLabel(e.vatMode)}</span>
+                  </>
+                )}
+                {hasReceipt && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="profit">영수증 첨부</span>
+                  </>
+                )}
               </div>
               {e.note && <p className="expense-row__note">{e.note}</p>}
               {isLinked && (
@@ -85,6 +106,25 @@ export function ExpenseList({
             </div>
             <div className="expense-row__amount">{formatKRW(e.amount)}</div>
             <div className="expense-row__actions">
+              {hasReceipt && (
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label="영수증 보기"
+                  title="영수증 보기"
+                  onClick={() => {
+                    const w = window.open('', '_blank', 'noopener,noreferrer')
+                    if (w && e.receiptDataUrl) {
+                      w.document.write(
+                        `<html><body style="margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh"><img src="${e.receiptDataUrl}" style="max-width:100%;max-height:100vh" alt="영수증"/></body></html>`,
+                      )
+                      w.document.close()
+                    }
+                  }}
+                >
+                  <Image size={16} />
+                </button>
+              )}
               {onToggleInvoice && !isLinked && (
                 <button
                   type="button"

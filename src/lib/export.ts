@@ -90,16 +90,20 @@ export function exportProjectCSV(project: Project) {
     ]),
     [],
     ['[지출 내역]'],
-    ['항목', '금액', '날짜', '카테고리', '거래처', '계산서수령', '메모'],
+    ['항목', '합계', '공급가', '부가세', 'VAT구분', '날짜', '카테고리', '거래처', '계산서수령', '영수증', '메모'],
     ...project.expenses.map((e) => {
       const cat = project.categories.find((c) => c.id === e.categoryId)
       return [
         e.title,
         e.amount,
+        e.supplyAmount ?? e.amount,
+        e.vatAmount ?? 0,
+        e.vatMode ?? 'included',
         e.date,
         cat?.name ?? '',
         e.vendor,
         e.invoiceReceived ? '수령' : '미수령',
+        e.receiptFileName || (e.receiptDataUrl ? '첨부' : ''),
         e.note,
       ]
     }),
