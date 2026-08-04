@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Check, Circle, Plus, Trash2, User } from 'lucide-react'
+import { Check, Circle, Pencil, Plus, Trash2, User } from 'lucide-react'
 import type { LaborPayment } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { LaborPaymentForm } from './LaborPaymentForm'
 
 interface LaborPaymentsPanelProps {
   payments: LaborPayment[]
@@ -27,8 +28,28 @@ export function LaborPaymentsPanel({
   onDelete,
   onTogglePaid,
 }: LaborPaymentsPanelProps) {
-  const [adding, setAdding] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<LaborPayment | null>(null)
   const pct = stats.total > 0 ? Math.round((stats.paid / stats.total) * 100) : 0
+
+  const handleSubmit = (data: Omit<LaborPayment, 'id'>) => {
+    if (editing) {
+      const paidChanged = data.isPaid !== editing.isPaid
+      if (paidChanged) {
+        onUpdate(editing.id, {
+          ...data,
+          isPaid: editing.isPaid,
+          paidDate: editing.paidDate,
+          expenseId: editing.expenseId,
+        })
+        onTogglePaid(editing.id, data.isPaid)
+      } else {
+        onUpdate(editing.id, data)
+      }
+    } else {
+      onAdd({ ...data, isPaid: false, paidDate: '', expenseId: undefined })
+    }
+  }
 
   return (
     <section className="section payment-panel" aria-labelledby="labor-pay-heading">
@@ -50,7 +71,10 @@ export function LaborPaymentsPanel({
         <button
           type="button"
           className="btn btn--ghost btn--sm"
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => {
+            setEditing(null)
+            setFormOpen(true)
+          }}
         >
           <Plus size={16} />
           인력 추가
@@ -77,16 +101,6 @@ export function LaborPaymentsPanel({
         </div>
       </div>
 
-      {adding && (
-        <LaborAddForm
-          onSubmit={(data) => {
-            onAdd(data)
-            setAdding(false)
-          }}
-          onCancel={() => setAdding(false)}
-        />
-      )}
-
       {payments.length === 0 ? (
         <div className="empty empty--compact">
           <p>등록된 인력이 없습니다.</p>
@@ -97,7 +111,7 @@ export function LaborPaymentsPanel({
           {payments.map((p) => (
             <li
               key={p.id}
-              className={`payment-row ${p.isPaid ? 'payment-row--done' : ''}`}
+              className={`payment-row payment-row--labor ${p.isPaid ? 'payment-row--done' : ''}`}
             >
               <button
                 type="button"
@@ -111,18 +125,8 @@ export function LaborPaymentsPanel({
                 type="button"
                 className="payment-row__main"
                 onClick={() => {
-                  const name = prompt('이름', p.name)
-                  if (name == null) return
-                  const role = prompt('역할', p.role)
-                  if (role == null) return
-                  const amount = Number(prompt('금액 (원)', String(p.amount)) ?? p.amount)
-                  if (!Number.isFinite(amount) || amount <= 0) return
-                  onUpdate(p.id, {
-                    ...p,
-                    name: name.trim() || p.name,
-                    role: role.trim(),
-                    amount: Math.round(amount),
-                  })
+                  setEditing(p)
+                  setFormOpen(true)
                 }}
               >
                 <span className="payment-row__title">
@@ -144,6 +148,17 @@ export function LaborPaymentsPanel({
               <span className="payment-row__amount">{formatKRW(p.amount)}</span>
               <button
                 type="button"
+                className="icon-btn"
+                aria-label="수정"
+                onClick={() => {
+                  setEditing(p)
+                  setFormOpen(true)
+                }}
+              >
+                <Pencil size={15} />
+              </button>
+              <button
+                type="button"
                 className="icon-btn icon-btn--danger"
                 aria-label="삭제"
                 onClick={() => {
@@ -156,47 +171,16 @@ export function LaborPaymentsPanel({
           ))}
         </ul>
       )}
-    </section>
-  )
-}
 
-function LaborAddForm({
-  onSubmit,
-  onCancel,
-}: {
-  onSubmit: (data: Omit<LaborPayment, 'id'>) => void
-  onCancel: () => void
-}) {
-  return (
-    <form
-      className="payment-add-form"
-      onSubmit={(e) => {
-        e.preventDefault()
-        const fd = new FormData(e.currentTarget)
-        onSubmit({
-          name: String(fd.get('name') || ''),
-          role: String(fd.get('role') || ''),
-          amount: Math.max(0, Number(fd.get('amount')) || 0),
-          workDate: String(fd.get('workDate') || ''),
-          paidDate: '',
-          isPaid: false,
-          note: String(fd.get('note') || ''),
-        })
-      }}
-    >
-      <input name="name" required placeholder="이름" autoFocus />
-      <input name="role" placeholder="역할" />
-      <input name="amount" type="number" min={0} step={100000} required placeholder="금액" />
-      <input name="workDate" type="date" />
-      <input name="note" placeholder="메모 (선택)" />
-      <div className="form-actions">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>
-          취소
-        </button>
-        <button type="submit" className="btn btn--primary btn--sm">
-          추가
-        </button>
-      </div>
-    </form>
+      <LaborPaymentForm
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false)
+          setEditing(null)
+        }}
+        initial={editing}
+        onSubmit={handleSubmit}
+      />
+    </section>
   )
 }

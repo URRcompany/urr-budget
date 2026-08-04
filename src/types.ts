@@ -130,6 +130,45 @@ export function projectReceived(project: Project): number {
     .reduce((sum, p) => sum + p.amount, 0)
 }
 
+/** 입금 회차에 배정된 금액 합계 */
+export function clientPaymentsScheduledTotal(payments: ClientPayment[]): number {
+  return payments.reduce((sum, p) => sum + p.amount, 0)
+}
+
+/** 계약금액 대비 미배정·초과 배정 */
+export function clientPaymentsAllocation(
+  revenue: number,
+  payments: ClientPayment[],
+): {
+  scheduled: number
+  unallocated: number
+  overAllocated: number
+  matchesContract: boolean
+} {
+  const scheduled = clientPaymentsScheduledTotal(payments)
+  const diff = revenue - scheduled
+  return {
+    scheduled,
+    unallocated: Math.max(diff, 0),
+    overAllocated: Math.max(-diff, 0),
+    matchesContract: revenue > 0 ? scheduled === revenue : payments.length === 0,
+  }
+}
+
+/** 프로젝트 현금 기준 유입·유출 (장부와 동일 로직) */
+export function projectCashFlow(project: Project): {
+  inflow: number
+  outflow: number
+  net: number
+} {
+  const inflow = projectReceived(project)
+  let outflow = project.expenses.reduce((sum, e) => sum + e.amount, 0)
+  for (const lp of project.laborPayments) {
+    if (lp.isPaid && !lp.expenseId) outflow += lp.amount
+  }
+  return { inflow, outflow, net: inflow - outflow }
+}
+
 export function projectReceivableOutstanding(project: Project): number {
   return Math.max(project.revenue - projectReceived(project), 0)
 }

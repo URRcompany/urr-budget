@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Category } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
+import { CategoryRenameForm } from './CategoryRenameForm'
 
 interface CategoryBreakdownProps {
   categories: Array<Category & { spent: number }>
@@ -20,6 +21,7 @@ export function CategoryBreakdown({
 }: CategoryBreakdownProps) {
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const max = Math.max(
     ...categories.map((c) => Math.max(c.planned, c.spent)),
     1,
@@ -51,10 +53,7 @@ export function CategoryBreakdown({
                     type="button"
                     className="icon-btn"
                     aria-label={`${c.name} 이름 변경`}
-                    onClick={() => {
-                      const next = prompt('카테고리 이름', c.name)
-                      if (next) onRenameCategory(c.id, next)
-                    }}
+                    onClick={() => setRenaming({ id: c.id, name: c.name })}
                   >
                     <Pencil size={14} />
                   </button>
@@ -159,6 +158,15 @@ export function CategoryBreakdown({
           세부 카테고리 추가
         </button>
       )}
+
+      <CategoryRenameForm
+        open={renaming != null}
+        onClose={() => setRenaming(null)}
+        initialName={renaming?.name ?? ''}
+        onSubmit={(name) => {
+          if (renaming) onRenameCategory(renaming.id, name)
+        }}
+      />
     </div>
   )
 }

@@ -138,7 +138,10 @@ export function BudgetHero({
                 </strong>
               </div>
               <div className="hero__figure">
-                <span className="label">순수익</span>
+                <span className="label">
+                  <span className="basis-badge basis-badge--accrual">발생</span>
+                  순수익
+                </span>
                 <strong className={netProfit >= 0 ? '' : 'danger-text'}>
                   {formatKRW(netProfit)}
                 </strong>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Check, Circle, FileText, Plus, Trash2 } from 'lucide-react'
+import { Check, Circle, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { ClientPayment } from '../types'
+import { clientPaymentsAllocation } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 import { daysOverdue, isPaymentOverdue } from '../lib/receivables'
+import { ClientPaymentForm } from './ClientPaymentForm'
 
 interface ClientPaymentsPanelProps {
   payments: ClientPayment[]
@@ -27,11 +29,14 @@ export function ClientPaymentsPanel({
   onTogglePaid,
   onToggleInvoice,
 }: ClientPaymentsPanelProps) {
-  const [adding, setAdding] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<ClientPayment | null>(null)
+
   const pendingCount = payments.filter((p) => !p.isPaid).length
   const overdueCount = payments.filter((p) => isPaymentOverdue(p)).length
   const unissuedCount = payments.filter((p) => p.isPaid && !(p.invoiceIssued ?? false)).length
   const pct = revenue > 0 ? Math.round((received / revenue) * 100) : 0
+  const allocation = clientPaymentsAllocation(revenue, payments)
 
   return (
     <section className="section payment-panel" aria-labelledby="client-pay-heading">
@@ -60,12 +65,31 @@ export function ClientPaymentsPanel({
         <button
           type="button"
           className="btn btn--ghost btn--sm"
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => {
+            setEditing(null)
+            setFormOpen(true)
+          }}
         >
           <Plus size={16} />
           입금 회차 추가
         </button>
       </header>
+
+      {revenue > 0 && payments.length > 0 && (
+        <div
+          className={`allocation-banner ${allocation.matchesContract ? 'allocation-banner--ok' : 'allocation-banner--warn'}`}
+          role="status"
+        >
+          회차 합계 <strong>{formatKRW(allocation.scheduled)}</strong>
+          {allocation.matchesContract ? (
+            <span> · 계약금액과 일치</span>
+          ) : allocation.overAllocated > 0 ? (
+            <strong className="warn-text"> · 계약 초과 {formatKRW(allocation.overAllocated)}</strong>
+          ) : (
+            <span className="warn-text"> · 미배정 {formatKRW(allocation.unallocated)}</span>
+          )}
+        </div>
+      )}
 
       <div className="payment-summary">
         <div className="payment-summary__meter" aria-hidden>
@@ -85,16 +109,6 @@ export function ClientPaymentsPanel({
         </div>
       </div>
 
-      {adding && (
-        <PaymentAddForm
-          onSubmit={(data) => {
-            onAdd(data)
-            setAdding(false)
-          }}
-          onCancel={() => setAdding(false)}
-        />
-      )}
-
       {payments.length === 0 ? (
         <div className="empty empty--compact">
           <p>입금 회차가 없습니다.</p>
@@ -109,17 +123,8 @@ export function ClientPaymentsPanel({
               onToggle={() => onTogglePaid(p.id, !p.isPaid)}
               onToggleInvoice={() => onToggleInvoice(p.id, !p.invoiceIssued)}
               onEdit={() => {
-                const label = prompt('회차명', p.label)
-                if (label == null) return
-                const amount = Number(
-                  prompt('금액 (원)', String(p.amount)) ?? p.amount,
-                )
-                if (!Number.isFinite(amount) || amount <= 0) return
-                onUpdate(p.id, {
-                  ...p,
-                  label: label.trim() || p.label,
-                  amount: Math.round(amount),
-                })
+                setEditing(p)
+                setFormOpen(true)
               }}
               onDelete={() => {
                 if (confirm(`「${p.label}」 입금 회차를 삭제할까요?`)) onDelete(p.id)
@@ -128,6 +133,21 @@ export function ClientPaymentsPanel({
           ))}
         </ul>
       )}
+
+      <ClientPaymentForm
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false)
+          setEditing(null)
+        }}
+        initial={editing}
+        revenue={revenue}
+        scheduledTotal={allocation.scheduled}
+        onSubmit={(data) => {
+          if (editing) onUpdate(editing.id, data)
+          else onAdd(data)
+        }}
+      />
     </section>
   )
 }
@@ -203,6 +223,14 @@ function PaymentRow({
       <span className="payment-row__amount">{formatKRW(payment.amount)}</span>
       <button
         type="button"
+        className="icon-btn"
+        aria-label="수정"
+        onClick={onEdit}
+      >
+        <Pencil size={15} />
+      </button>
+      <button
+        type="button"
         className="icon-btn icon-btn--danger"
         aria-label="삭제"
         onClick={onDelete}
@@ -210,46 +238,5 @@ function PaymentRow({
         <Trash2 size={15} />
       </button>
     </li>
-  )
-}
-
-function PaymentAddForm({
-  onSubmit,
-  onCancel,
-}: {
-  onSubmit: (data: Omit<ClientPayment, 'id'>) => void
-  onCancel: () => void
-}) {
-  return (
-    <form
-      className="payment-add-form"
-      onSubmit={(e) => {
-        e.preventDefault()
-        const fd = new FormData(e.currentTarget)
-        onSubmit({
-          label: String(fd.get('label') || '입금'),
-          amount: Math.max(0, Number(fd.get('amount')) || 0),
-          dueDate: String(fd.get('dueDate') || ''),
-          paidDate: '',
-          isPaid: false,
-          note: String(fd.get('note') || ''),
-          invoiceIssued: false,
-          invoiceDate: '',
-        })
-      }}
-    >
-      <input name="label" required placeholder="회차명" autoFocus />
-      <input name="amount" type="number" min={0} step={100000} required placeholder="금액" />
-      <input name="dueDate" type="date" />
-      <input name="note" placeholder="메모 (선택)" />
-      <div className="form-actions">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>
-          취소
-        </button>
-        <button type="submit" className="btn btn--primary btn--sm">
-          추가
-        </button>
-      </div>
-    </form>
   )
 }

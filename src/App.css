@@ -773,7 +773,7 @@ button {
 
 .payment-row {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto auto;
   align-items: center;
   gap: 0.65rem;
   padding: 0.75rem 0.85rem;
@@ -781,6 +781,10 @@ button {
   background: var(--surface-solid);
   border: 1px solid var(--line);
   transition: background 0.2s, border-color 0.2s;
+}
+
+.payment-row--labor {
+  grid-template-columns: auto 1fr auto auto auto;
 }
 
 .payment-row--done {
@@ -1291,6 +1295,207 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* —— Project detail tabs —— */
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0 1.25rem;
+  margin: 0 auto;
+  max-width: 1280px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.desktop-main .detail-tabs {
+  padding: 0 2rem;
+}
+
+.detail-tabs__btn {
+  border: none;
+  background: transparent;
+  padding: 0.85rem 1rem;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.detail-tabs__btn:hover {
+  color: var(--ink-soft);
+}
+
+.detail-tabs__btn--active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.main--tabbed {
+  margin-top: 1.25rem;
+}
+
+.detail-tab-panel {
+  display: grid;
+  gap: 2rem;
+}
+
+.detail-tab-panel--stack {
+  gap: 2.5rem;
+}
+
+/* —— Basis badges —— */
+.basis-badge {
+  display: inline-block;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.basis-badge--accrual {
+  background: rgba(42, 111, 124, 0.12);
+  color: var(--teal);
+}
+
+.basis-badge--cash {
+  background: rgba(196, 120, 42, 0.12);
+  color: var(--accent-deep);
+}
+
+.hero__figure .label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* —— Contract allocation —— */
+.allocation-banner {
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: var(--text-sm);
+  margin-bottom: 0.85rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.allocation-banner--ok {
+  border-color: rgba(42, 111, 124, 0.25);
+  background: rgba(42, 111, 124, 0.06);
+}
+
+.allocation-banner--warn {
+  border-color: rgba(168, 107, 26, 0.35);
+  background: rgba(168, 107, 26, 0.06);
+}
+
+.form-hint {
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  background: rgba(20, 24, 31, 0.04);
+  border: 1px solid var(--line);
+}
+
+.form-hint--warn {
+  border-color: rgba(168, 107, 26, 0.35);
+  background: rgba(168, 107, 26, 0.06);
+}
+
+.modal--narrow {
+  width: min(380px, 100%);
+}
+
+.profit-panel__grid--dual {
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 0.85rem;
+}
+
+.profit-hero--cash {
+  background:
+    linear-gradient(145deg, rgba(196, 120, 42, 0.1), rgba(255, 255, 255, 0.7)),
+    var(--surface-solid);
+}
+
+.profit-hero--cash strong {
+  color: var(--accent-deep);
+}
+
+.profit-hero--cash.profit-hero--loss strong {
+  color: var(--danger);
+}
+
+.profit-facts--wide {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 800px) {
+  .profit-panel__grid--dual {
+    grid-template-columns: 1fr;
+  }
+
+  .profit-facts--wide {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .detail-tabs {
+    padding: 0 0.75rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .detail-tabs__btn {
+    padding: 0.75rem 0.85rem;
+    white-space: nowrap;
+    font-size: var(--text-base);
+  }
+
+  .profit-facts--wide {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-row {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'check main amount'
+      'check meta actions';
+  }
+
+  .payment-row--labor {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .payment-check {
+    grid-area: check;
+  }
+
+  .payment-row__main {
+    grid-area: main;
+  }
+
+  .payment-row__amount {
+    grid-area: amount;
+  }
+
+  .payment-row .invoice-check,
+  .payment-row .icon-btn {
+    grid-area: actions;
+  }
+}
+
 /* —— Profit panel —— */
 .profit-panel__grid {
   display: grid;
@@ -1378,7 +1583,7 @@ button {
 .category-card__tools {
   display: flex;
   margin-left: auto;
-  opacity: 0.55;
+  opacity: 1;
 }
 
 .category-card:hover .category-card__tools,
