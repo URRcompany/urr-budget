@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, useMemo, type CSSProperties } from 'react'
 import { Plus, Download } from 'lucide-react'
 import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
 import { projectCashFlow } from '../types'
@@ -51,6 +51,7 @@ interface ProjectDetailViewProps {
     >,
   ) => void
   onUpdateCategoryPlanned: (id: string, planned: number) => void
+  onApplyCategoryAllocations: (allocations: Record<string, number>) => void
   onAddCategory: (name: string) => void
   onRenameCategory: (id: string, name: string) => void
   onDeleteCategory: (id: string) => void
@@ -91,6 +92,7 @@ export function ProjectDetailView({
   onBack,
   onUpdateProject,
   onUpdateCategoryPlanned,
+  onApplyCategoryAllocations,
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
@@ -118,6 +120,16 @@ export function ProjectDetailView({
   const [editing, setEditing] = useState<Expense | null>(null)
 
   const cashFlow = projectCashFlow(project)
+
+  const linkedExpenseIds = useMemo(
+    () =>
+      new Set(
+        project.laborPayments
+          .map((lp) => lp.expenseId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [project.laborPayments],
+  )
 
   return (
     <>
@@ -184,8 +196,11 @@ export function ProjectDetailView({
                 </div>
               </header>
               <CategoryBreakdown
+                totalBudget={project.totalBudget}
                 categories={byCategory}
+                laborCommitted={laborStats.total}
                 onUpdatePlanned={onUpdateCategoryPlanned}
+                onApplyAllocations={onApplyCategoryAllocations}
                 onAddCategory={onAddCategory}
                 onRenameCategory={onRenameCategory}
                 onDeleteCategory={onDeleteCategory}
@@ -218,6 +233,20 @@ export function ProjectDetailView({
                   </button>
                 </div>
               </header>
+
+              <div className="expense-callout" role="note">
+                <p>
+                  <strong>인건비</strong>는{' '}
+                  <button
+                    type="button"
+                    className="expense-callout__link"
+                    onClick={() => setTab('payments')}
+                  >
+                    입금·인건비 탭
+                  </button>
+                  에서 등록하세요. 지급 완료 시 이 목록에 자동으로 나타납니다.
+                </p>
+              </div>
 
               <div className="filters" role="tablist" aria-label="카테고리 필터">
                 <button
@@ -252,6 +281,7 @@ export function ProjectDetailView({
               <ExpenseList
                 expenses={filteredExpenses}
                 categoryOf={categoryOf}
+                linkedExpenseIds={linkedExpenseIds}
                 onEdit={(e) => {
                   setEditing(e)
                   setFormOpen(true)

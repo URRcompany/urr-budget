@@ -674,6 +674,10 @@ button {
 }
 
 .expense-row__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
   font-weight: var(--weight-semibold);
   font-size: var(--text-base);
   line-height: var(--leading-snug);
@@ -1434,6 +1438,162 @@ button {
 
 .profit-hero--cash.profit-hero--loss strong {
   color: var(--danger);
+}
+
+.allocation-banner--budget {
+  margin-bottom: 0;
+}
+
+.budget-allocator {
+  margin-bottom: 1.25rem;
+}
+
+.budget-allocator__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: var(--text-sm);
+}
+
+.budget-allocator__hint {
+  margin-top: 0.5rem;
+  font-size: var(--text-sm);
+}
+
+.budget-allocator__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.budget-allocator__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-solid);
+  margin-bottom: 0.5rem;
+}
+
+.budget-allocator__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.budget-allocator__table th,
+.budget-allocator__table td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.budget-allocator__table th {
+  font-weight: var(--weight-semibold);
+  color: var(--muted);
+  background: rgba(20, 24, 31, 0.03);
+}
+
+.budget-allocator__table tfoot td {
+  border-bottom: none;
+  font-weight: var(--weight-semibold);
+}
+
+.budget-allocator__table .dot {
+  display: inline-block;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+.budget-allocator__input {
+  width: 100%;
+  min-width: 7rem;
+}
+
+.category-card--labor {
+  border-color: rgba(42, 111, 124, 0.25);
+}
+
+.category-card__labor-note {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: rgba(42, 111, 124, 0.08);
+  color: var(--ink-soft);
+}
+
+.labor-callout {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(42, 111, 124, 0.28);
+  background: rgba(42, 111, 124, 0.07);
+  margin-bottom: 1.25rem;
+}
+
+.labor-callout strong {
+  display: block;
+  font-size: var(--text-base);
+  margin-bottom: 0.25rem;
+}
+
+.labor-callout p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--ink-soft);
+}
+
+.labor-callout em {
+  font-style: normal;
+  font-weight: var(--weight-semibold);
+  color: var(--teal);
+}
+
+.expense-callout {
+  padding: 0.75rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-bottom: 1rem;
+}
+
+.expense-callout p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--ink-soft);
+}
+
+.expense-callout__link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  color: var(--accent-deep);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.expense-callout__link:hover {
+  color: var(--accent);
+}
+
+.expense-row--linked {
+  background: rgba(42, 111, 124, 0.05);
+  border-color: rgba(42, 111, 124, 0.18);
+}
+
+.expense-row__link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.35rem;
+  vertical-align: middle;
 }
 
 .profit-facts--wide {

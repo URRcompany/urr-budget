@@ -1,10 +1,11 @@
-import { FileText, Pencil, Trash2 } from 'lucide-react'
+import { FileText, Link2, Pencil, Trash2 } from 'lucide-react'
 import type { Category, Expense } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 
 interface ExpenseListProps {
   expenses: Expense[]
   categoryOf: (id: Expense['categoryId']) => Category | undefined
+  linkedExpenseIds?: Set<string>
   onEdit: (expense: Expense) => void
   onDelete: (id: string) => void
   onToggleInvoice?: (id: string, received: boolean) => void
@@ -13,6 +14,7 @@ interface ExpenseListProps {
 export function ExpenseList({
   expenses,
   categoryOf,
+  linkedExpenseIds,
   onEdit,
   onDelete,
   onToggleInvoice,
@@ -30,10 +32,11 @@ export function ExpenseList({
     <ul className="expense-list">
       {expenses.map((e, i) => {
         const cat = categoryOf(e.categoryId)
+        const isLinked = linkedExpenseIds?.has(e.id) ?? false
         return (
           <li
             key={e.id}
-            className={`expense-row ${!(e.invoiceReceived ?? false) ? 'expense-row--no-invoice' : ''}`}
+            className={`expense-row ${isLinked ? 'expense-row--linked' : ''} ${!(e.invoiceReceived ?? false) ? 'expense-row--no-invoice' : ''}`}
             style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
           >
             <span
@@ -42,7 +45,15 @@ export function ExpenseList({
               aria-hidden
             />
             <div className="expense-row__main">
-              <div className="expense-row__title">{e.title}</div>
+              <div className="expense-row__title">
+                {e.title}
+                {isLinked && (
+                  <span className="link-badge expense-row__link-badge">
+                    <Link2 size={12} aria-hidden />
+                    인건비 연동
+                  </span>
+                )}
+              </div>
               <div className="expense-row__meta">
                 <span>{cat?.name ?? '기타'}</span>
                 <span aria-hidden>·</span>
@@ -66,10 +77,15 @@ export function ExpenseList({
                 )}
               </div>
               {e.note && <p className="expense-row__note">{e.note}</p>}
+              {isLinked && (
+                <p className="expense-row__note muted">
+                  인건비 탭에서 수정·삭제하세요. 금액은 지급 상태와 연동됩니다.
+                </p>
+              )}
             </div>
             <div className="expense-row__amount">{formatKRW(e.amount)}</div>
             <div className="expense-row__actions">
-              {onToggleInvoice && (
+              {onToggleInvoice && !isLinked && (
                 <button
                   type="button"
                   className={`icon-btn invoice-check-inline ${e.invoiceReceived ? 'invoice-check-inline--done' : ''}`}
@@ -82,24 +98,28 @@ export function ExpenseList({
                   <FileText size={16} />
                 </button>
               )}
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => onEdit(e)}
-                aria-label="수정"
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                type="button"
-                className="icon-btn icon-btn--danger"
-                onClick={() => {
-                  if (confirm(`「${e.title}」 지출을 삭제할까요?`)) onDelete(e.id)
-                }}
-                aria-label="삭제"
-              >
-                <Trash2 size={16} />
-              </button>
+              {!isLinked && (
+                <>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => onEdit(e)}
+                    aria-label="수정"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn--danger"
+                    onClick={() => {
+                      if (confirm(`「${e.title}」 지출을 삭제할까요?`)) onDelete(e.id)
+                    }}
+                    aria-label="삭제"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </>
+              )}
             </div>
           </li>
         )

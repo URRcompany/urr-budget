@@ -52,7 +52,15 @@ export function LaborPaymentsPanel({
   }
 
   return (
-    <section className="section payment-panel" aria-labelledby="labor-pay-heading">
+    <section className="section payment-panel payment-panel--labor" aria-labelledby="labor-pay-heading">
+      <div className="labor-callout" role="note">
+        <strong>인건비는 여기서만 등록하세요.</strong>
+        <p>
+          지급 완료 체크 시 <em>지출 내역</em>과 <em>인건비 카테고리</em>에 자동
+          반영됩니다. 지출 탭에서 따로 입력할 필요가 없습니다.
+        </p>
+      </div>
+
       <header className="section__head">
         <div>
           <h2 id="labor-pay-heading">인건비 지급</h2>
@@ -63,9 +71,6 @@ export function LaborPaymentsPanel({
                 미지급 {stats.unpaidCount}명
               </span>
             )}
-            <span className="muted payment-panel__hint-inline">
-              · 지급 완료 시 지출 내역 자동 등록
-            </span>
           </p>
         </div>
         <button

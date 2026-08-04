@@ -268,6 +268,38 @@ export function useStore() {
     [],
   )
 
+  const setCategoriesPlannedBulk = useCallback(
+    (projectId: string, allocations: Record<string, number>) => {
+      setStore((s) => ({
+        ...s,
+        projects: s.projects.map((p) => {
+          if (p.id !== projectId) return p
+          const patchKeys = Object.keys(allocations)
+          if (patchKeys.length === 1) {
+            const categoryId = patchKeys[0]
+            return {
+              ...p,
+              categories: p.categories.map((c) =>
+                c.id === categoryId
+                  ? { ...c, planned: Math.max(0, allocations[categoryId]) }
+                  : c,
+              ),
+            }
+          }
+          return {
+            ...p,
+            categories: p.categories.map((c) =>
+              allocations[c.id] !== undefined
+                ? { ...c, planned: Math.max(0, allocations[c.id]) }
+                : c,
+            ),
+          }
+        }),
+      }))
+    },
+    [],
+  )
+
   const addCategory = useCallback((projectId: string, name: string) => {
     const trimmed = name.trim()
     if (!trimmed) return
@@ -638,6 +670,7 @@ export function useStore() {
     deleteProject,
     updateProject,
     updateCategoryPlanned,
+    setCategoriesPlannedBulk,
     addCategory,
     renameCategory,
     deleteCategory,

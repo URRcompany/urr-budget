@@ -3,18 +3,25 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Category } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
 import { CategoryRenameForm } from './CategoryRenameForm'
+import { BudgetAllocator } from './BudgetAllocator'
 
 interface CategoryBreakdownProps {
+  totalBudget: number
   categories: Array<Category & { spent: number }>
+  laborCommitted?: number
   onUpdatePlanned: (id: string, planned: number) => void
+  onApplyAllocations: (allocations: Record<string, number>) => void
   onAddCategory: (name: string) => void
   onRenameCategory: (id: string, name: string) => void
   onDeleteCategory: (id: string) => void
 }
 
 export function CategoryBreakdown({
+  totalBudget,
   categories,
+  laborCommitted = 0,
   onUpdatePlanned,
+  onApplyAllocations,
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
@@ -29,15 +36,22 @@ export function CategoryBreakdown({
 
   return (
     <div className="category-block">
+      <BudgetAllocator
+        totalBudget={totalBudget}
+        categories={categories}
+        onApplyAllocations={onApplyAllocations}
+      />
+
       <div className="category-grid">
         {categories.map((c, i) => {
           const over = c.planned > 0 && c.spent > c.planned
           const spentPct = (c.spent / max) * 100
           const planPct = (c.planned / max) * 100
+          const isLabor = c.id === 'labor'
           return (
             <article
               key={c.id}
-              className="category-card"
+              className={`category-card ${isLabor ? 'category-card--labor' : ''}`}
               style={{ animationDelay: `${120 + i * 40}ms` }}
             >
               <header className="category-card__head">
@@ -76,6 +90,13 @@ export function CategoryBreakdown({
                   </button>
                 </div>
               </header>
+
+              {isLabor && laborCommitted > 0 && (
+                <p className="category-card__labor-note">
+                  약정 인건비 {formatKRW(laborCommitted)} · 지출 {formatKRW(c.spent)}
+                  <span className="muted"> · 입금·인건비 탭에서 관리</span>
+                </p>
+              )}
 
               <div className="category-card__bars" aria-hidden>
                 <div className="bar bar--plan" style={{ width: `${planPct}%` }} />

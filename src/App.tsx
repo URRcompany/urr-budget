@@ -25,6 +25,7 @@ function App() {
     deleteProject,
     updateProject,
     updateCategoryPlanned,
+    setCategoriesPlannedBulk,
     addCategory,
     renameCategory,
     deleteCategory,
@@ -70,6 +71,9 @@ function App() {
         onUpdateProject={(patch) => updateProject(activeProject.id, patch)}
         onUpdateCategoryPlanned={(id, planned) =>
           updateCategoryPlanned(activeProject.id, id, planned)
+        }
+        onApplyCategoryAllocations={(allocations) =>
+          setCategoriesPlannedBulk(activeProject.id, allocations)
         }
         onAddCategory={(name) => addCategory(activeProject.id, name)}
         onRenameCategory={(id, name) =>
