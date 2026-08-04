@@ -269,6 +269,24 @@ button {
   background: linear-gradient(90deg, #d96a4a, var(--danger));
 }
 
+.meter__track {
+  position: relative;
+}
+
+.meter__fill--committed {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  background: rgba(196, 120, 42, 0.28);
+  pointer-events: none;
+}
+
+.meter__fill:not(.meter__fill--committed) {
+  position: relative;
+  z-index: 1;
+}
+
 .meter__legend {
   display: flex;
   flex-wrap: wrap;
@@ -2670,4 +2688,24 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.backup-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.backup-controls--compact .backup-controls__actions {
+  flex-direction: column;
+}
+
+.backup-controls__msg {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-xs);
+  color: var(--success, #3d6b5a);
+}
+
+.backup-controls__msg--err {
+  color: var(--danger);
 }

@@ -9,6 +9,7 @@ import {
   type Project,
 } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { BackupControls } from './BackupControls'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
@@ -33,6 +34,11 @@ interface ProjectListProps {
     revenue: number
     totalBudget: number
   }) => void
+  onExportBackup: () => void
+  onImportBackup: (
+    file: File,
+    mode: 'merge' | 'replace',
+  ) => Promise<{ ok: boolean; error?: string; projectCount?: number }>
 }
 
 export function ProjectList({
@@ -43,6 +49,8 @@ export function ProjectList({
   onOpen,
   onDelete,
   onCreate,
+  onExportBackup,
+  onImportBackup,
 }: ProjectListProps) {
   const [creating, setCreating] = useState(false)
   const thisMonth = getMonthStats(projects, monthKey())
@@ -98,6 +106,7 @@ export function ProjectList({
             <p className="muted">카드를 눌러 예산·지출을 관리합니다</p>
           </div>
           <div className="section__actions">
+            <BackupControls onExport={onExportBackup} onImport={onImportBackup} />
             <button
               type="button"
               className="btn btn--primary"

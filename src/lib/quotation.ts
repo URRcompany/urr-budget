@@ -107,13 +107,38 @@ function buildQuotationHTML(project: Project): string {
 </html>`
 }
 
+/** 배정 합계와 견적(계약) 금액 불일치 여부 */
+export function quotationMismatch(project: Project): {
+  mismatch: boolean
+  plannedTotal: number
+  quoteTotal: number
+} {
+  const plannedTotal = categoryPlannedTotal(project.categories)
+  const quoteTotal = project.revenue > 0 ? project.revenue : plannedTotal
+  return {
+    mismatch:
+      project.revenue > 0 && plannedTotal > 0 && plannedTotal !== quoteTotal,
+    plannedTotal,
+    quoteTotal,
+  }
+}
+
 /** 견적서 HTML을 열고 인쇄(PDF 저장) 대화상자 표시 */
-export function exportQuotationPDF(project: Project): void {
+export function exportQuotationPDF(project: Project): boolean {
+  const { mismatch, plannedTotal, quoteTotal } = quotationMismatch(project)
+  if (mismatch) {
+    const diff = Math.abs(plannedTotal - quoteTotal)
+    const ok = confirm(
+      `카테고리 배정 합계(${formatKRW(plannedTotal)})와 견적 금액(${formatKRW(quoteTotal)})이 ${formatKRW(diff)} 차이납니다.\n그래도 견적서를 출력할까요?`,
+    )
+    if (!ok) return false
+  }
+
   const html = buildQuotationHTML(project)
   const win = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700')
   if (!win) {
     alert('팝업이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.')
-    return
+    return false
   }
   win.document.open()
   win.document.write(html)
@@ -122,4 +147,5 @@ export function exportQuotationPDF(project: Project): void {
   setTimeout(() => {
     win.print()
   }, 350)
+  return true
 }

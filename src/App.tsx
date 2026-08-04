@@ -42,6 +42,9 @@ function App() {
     updateLaborPayment,
     deleteLaborPayment,
     toggleLaborPaymentPaid,
+    applyClientPaymentTemplate,
+    exportBackup,
+    importBackup,
     categoryOf,
   } = useStore()
 
@@ -57,7 +60,10 @@ function App() {
         project={activeProject}
         spent={projectStats.spent}
         remaining={projectStats.remaining}
+        committedRemaining={projectStats.committedRemaining}
+        unpaidLabor={projectStats.unpaidLabor}
         usageRatio={projectStats.usageRatio}
+        committedUsageRatio={projectStats.committedUsageRatio}
         netProfit={projectStats.netProfit}
         margin={projectStats.margin}
         received={projectStats.received}
@@ -108,6 +114,9 @@ function App() {
         onToggleLaborPaymentPaid={(id, isPaid) =>
           toggleLaborPaymentPaid(activeProject.id, id, isPaid)
         }
+        onApplyClientPaymentTemplate={() =>
+          applyClientPaymentTemplate(activeProject.id, activeProject.revenue)
+        }
         allProjects={projects}
         ledgerMonth={ledgerMonth}
         onMonthChange={setLedgerMonth}
@@ -125,6 +134,8 @@ function App() {
           onSelect={openProject}
           onDelete={deleteProject}
           onCreate={createProject}
+          onExportBackup={exportBackup}
+          onImportBackup={importBackup}
         />
         <div className="desktop-main">
           {detail ?? (
@@ -151,6 +162,8 @@ function App() {
           onOpen={openProject}
           onDelete={deleteProject}
           onCreate={createProject}
+          onExportBackup={exportBackup}
+          onImportBackup={importBackup}
         />
       </div>
     )

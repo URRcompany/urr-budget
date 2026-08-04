@@ -14,10 +14,13 @@ import {
   type Expense,
   type LaborPayment,
   type Project,
+  PROTECTED_CATEGORY_IDS,
+  projectCommittedSpent,
 } from '../types'
 import { uid } from '../lib/format'
 import { monthKey } from '../lib/ledger'
 import { normalizeExpenseTaxFields } from '../lib/vat'
+import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
 const STORAGE_KEY = 'reelbudget.store.v3'
 const STORAGE_KEY_V2 = 'reelbudget.store.v2'
@@ -84,6 +87,18 @@ function stripSampleProjects(store: AppStore): AppStore {
       ? store.activeProjectId
       : null
   return { ...store, projects, activeProjectId }
+}
+
+function normalizeImportedStore(raw: AppStore): AppStore {
+  return stripSampleProjects({
+    version: 3,
+    projects: raw.projects.map((p) => normalizeProject(p)),
+    activeProjectId:
+      raw.activeProjectId &&
+      raw.projects.some((p) => p.id === raw.activeProjectId)
+        ? raw.activeProjectId
+        : null,
+  })
 }
 
 function createInitialStore(): AppStore {
@@ -174,7 +189,10 @@ export function useStore() {
   const [ledgerMonth, setLedgerMonth] = useState(monthKey)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+    }, 500)
+    return () => window.clearTimeout(timer)
   }, [store])
 
   const activeProject = useMemo(
@@ -243,7 +261,12 @@ export function useStore() {
       patch: Partial<
         Pick<
           Project,
-          'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget'
+          | 'name'
+          | 'client'
+          | 'shootDate'
+          | 'revenue'
+          | 'totalBudget'
+          | 'budgetPreset'
         >
       >,
     ) => {
@@ -355,6 +378,7 @@ export function useStore() {
   )
 
   const deleteCategory = useCallback((projectId: string, categoryId: string) => {
+    if (PROTECTED_CATEGORY_IDS.has(categoryId)) return
     setStore((s) => ({
       ...s,
       projects: s.projects.map((p) => {
@@ -532,12 +556,36 @@ export function useStore() {
 
   const updateLaborPayment = useCallback(
     (projectId: string, paymentId: string, data: Omit<LaborPayment, 'id'>) => {
-      patchProject(projectId, (p) => ({
-        ...p,
-        laborPayments: p.laborPayments.map((lp) =>
-          lp.id === paymentId ? { ...data, id: paymentId } : lp,
-        ),
-      }))
+      patchProject(projectId, (p) => {
+        const existing = p.laborPayments.find((l) => l.id === paymentId)
+        if (!existing) return p
+
+        let expenses = p.expenses
+        if (existing.isPaid && existing.expenseId) {
+          const paidDate =
+            data.paidDate || existing.paidDate || new Date().toISOString().slice(0, 10)
+          expenses = p.expenses.map((e) =>
+            e.id === existing.expenseId
+              ? {
+                  ...e,
+                  title: `${data.name} 인건비`,
+                  amount: data.amount,
+                  date: paidDate,
+                  vendor: data.name,
+                  note: [data.role, data.note].filter(Boolean).join(' · '),
+                }
+              : e,
+          )
+        }
+
+        return {
+          ...p,
+          expenses,
+          laborPayments: p.laborPayments.map((lp) =>
+            lp.id === paymentId ? { ...data, id: paymentId } : lp,
+          ),
+        }
+      })
     },
     [patchProject],
   )
@@ -616,13 +664,105 @@ export function useStore() {
     [patchProject],
   )
 
+  const exportBackup = useCallback(() => {
+    downloadStoreBackup(store)
+  }, [store])
+
+  const importBackup = useCallback(async (file: File, mode: 'merge' | 'replace') => {
+    const result = await readBackupFile(file)
+    if (!result.ok) {
+      return { ok: false as const, error: result.error }
+    }
+
+    const imported = normalizeImportedStore(result.store)
+
+    if (mode === 'replace') {
+      setStore(imported)
+      setFilter('all')
+      return { ok: true as const, projectCount: imported.projects.length }
+    }
+
+    setStore((s) => {
+      const existingIds = new Set(s.projects.map((p) => p.id))
+      const merged = [...s.projects]
+      for (const p of imported.projects) {
+        if (existingIds.has(p.id)) {
+          const idx = merged.findIndex((m) => m.id === p.id)
+          merged[idx] = p
+        } else {
+          merged.unshift(p)
+        }
+      }
+      return {
+        version: 3,
+        projects: merged,
+        activeProjectId: s.activeProjectId,
+      }
+    })
+    return { ok: true as const, projectCount: imported.projects.length }
+  }, [])
+
+  const applyClientPaymentTemplate = useCallback(
+    (projectId: string, revenue: number) => {
+      if (revenue <= 0) return
+      const today = new Date().toISOString().slice(0, 10)
+      const items: Omit<ClientPayment, 'id'>[] = [
+        {
+          label: '계약금',
+          amount: Math.round(revenue * 0.3),
+          dueDate: today,
+          paidDate: '',
+          isPaid: false,
+          note: '30%',
+          invoiceIssued: false,
+          invoiceDate: '',
+        },
+        {
+          label: '중도금',
+          amount: Math.round(revenue * 0.4),
+          dueDate: '',
+          paidDate: '',
+          isPaid: false,
+          note: '40%',
+          invoiceIssued: false,
+          invoiceDate: '',
+        },
+        {
+          label: '잔금',
+          amount: Math.max(0, revenue - Math.round(revenue * 0.3) - Math.round(revenue * 0.4)),
+          dueDate: '',
+          paidDate: '',
+          isPaid: false,
+          note: '30%',
+          invoiceIssued: false,
+          invoiceDate: '',
+        },
+      ]
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: [
+          ...items.map((item) => ({ ...item, id: uid() })),
+          ...p.clientPayments,
+        ],
+      }))
+    },
+    [patchProject],
+  )
+
   const projectStats = useMemo(() => {
     if (!activeProject) return null
     const spent = projectSpent(activeProject)
+    const committedSpent = projectCommittedSpent(activeProject)
+    const unpaidLabor = committedSpent - spent
     const remaining = activeProject.totalBudget - spent
+    const committedRemaining = activeProject.totalBudget - committedSpent
     const usageRatio =
       activeProject.totalBudget > 0
         ? Math.min(spent / activeProject.totalBudget, 1)
+        : 0
+    const committedUsageRatio =
+      activeProject.totalBudget > 0
+        ? Math.min(committedSpent / activeProject.totalBudget, 1)
         : 0
     const netProfit = projectNetProfit(activeProject)
     const margin = projectMargin(activeProject)
@@ -645,8 +785,12 @@ export function useStore() {
 
     return {
       spent,
+      committedSpent,
+      unpaidLabor,
       remaining,
+      committedRemaining,
       usageRatio,
+      committedUsageRatio,
       netProfit,
       margin,
       received,
@@ -696,6 +840,9 @@ export function useStore() {
     updateLaborPayment,
     deleteLaborPayment,
     toggleLaborPaymentPaid,
+    applyClientPaymentTemplate,
+    exportBackup,
+    importBackup,
     categoryOf,
   }
 }

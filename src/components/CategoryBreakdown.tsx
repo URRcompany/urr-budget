@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { BudgetPresetId, Category } from '../types'
+import { PROTECTED_CATEGORY_IDS } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
+import { confirmBudgetOverAllocation } from '../lib/validation'
 import { CategoryRenameForm } from './CategoryRenameForm'
 import { BudgetAllocator } from './BudgetAllocator'
 
@@ -81,7 +83,8 @@ export function CategoryBreakdown({
                     type="button"
                     className="icon-btn icon-btn--danger"
                     aria-label={`${c.name} 삭제`}
-                    disabled={categories.length <= 1}
+                    disabled={categories.length <= 1 || PROTECTED_CATEGORY_IDS.has(c.id)}
+                    title={PROTECTED_CATEGORY_IDS.has(c.id) ? '시스템 카테고리는 삭제할 수 없습니다' : undefined}
                     onClick={() => {
                       if (
                         confirm(
@@ -128,9 +131,25 @@ export function CategoryBreakdown({
                       value={c.planned || ''}
                       placeholder="0"
                       aria-label={`${c.name} 배정 예산`}
-                      onChange={(e) =>
-                        onUpdatePlanned(c.id, Number(e.target.value) || 0)
-                      }
+                      onChange={(e) => {
+                        const planned = Number(e.target.value) || 0
+                        const next = { [c.id]: planned }
+                        if (
+                          !confirmBudgetOverAllocation(
+                            totalBudget,
+                            categories.map(({ id, name, color, planned: p }) => ({
+                              id,
+                              name,
+                              color,
+                              planned: p,
+                            })),
+                            next,
+                          )
+                        ) {
+                          return
+                        }
+                        onUpdatePlanned(c.id, planned)
+                      }}
                     />
                   </dd>
                 </div>

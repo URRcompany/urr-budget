@@ -8,6 +8,7 @@ import {
 } from '../lib/budget'
 import { allocateByBudgetPreset, BUDGET_PRESETS } from '../lib/categoryPresets'
 import { formatKRW } from '../lib/format'
+import { confirmBudgetOverAllocation } from '../lib/validation'
 
 const PRESET_ICONS: Record<BudgetPresetId, typeof PieChart> = {
   general: PieChart,
@@ -36,6 +37,7 @@ export function BudgetAllocator({
   const hasBudget = totalBudget > 0
 
   const applyPreset = (allocations: Record<string, number>) => {
+    if (!confirmBudgetOverAllocation(totalBudget, categories, allocations)) return
     onApplyAllocations(allocations)
   }
 
@@ -193,11 +195,13 @@ export function BudgetAllocator({
                         value={c.planned || ''}
                         placeholder="0"
                         aria-label={`${c.name} 배정 예산`}
-                        onChange={(e) =>
-                          onApplyAllocations({
+                        onChange={(e) => {
+                          const next = {
                             [c.id]: Number(e.target.value) || 0,
-                          })
-                        }
+                          }
+                          if (!confirmBudgetOverAllocation(totalBudget, categories, next)) return
+                          onApplyAllocations(next)
+                        }}
                       />
                     </td>
                     <td className="muted">{pct}%</td>

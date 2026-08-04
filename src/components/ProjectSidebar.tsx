@@ -8,6 +8,7 @@ import {
   type Project,
 } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
+import { BackupControls } from './BackupControls'
 
 interface ProjectSidebarProps {
   projects: Project[]
@@ -27,6 +28,11 @@ interface ProjectSidebarProps {
     revenue: number
     totalBudget: number
   }) => void
+  onExportBackup: () => void
+  onImportBackup: (
+    file: File,
+    mode: 'merge' | 'replace',
+  ) => Promise<{ ok: boolean; error?: string; projectCount?: number }>
 }
 
 export function ProjectSidebar({
@@ -36,6 +42,8 @@ export function ProjectSidebar({
   onSelect,
   onDelete,
   onCreate,
+  onExportBackup,
+  onImportBackup,
 }: ProjectSidebarProps) {
   const [creating, setCreating] = useState(false)
 
@@ -78,6 +86,11 @@ export function ProjectSidebar({
           <FolderPlus size={16} />
           새 프로젝트
         </button>
+        <BackupControls
+          compact
+          onExport={onExportBackup}
+          onImport={onImportBackup}
+        />
       </div>
 
       {creating && (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Circle, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, Circle, FileText, Layers, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { ClientPayment } from '../types'
 import { clientPaymentsAllocation } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
@@ -16,6 +16,7 @@ interface ClientPaymentsPanelProps {
   onDelete: (id: string) => void
   onTogglePaid: (id: string, isPaid: boolean) => void
   onToggleInvoice: (id: string, issued: boolean) => void
+  onApplyTemplate?: () => void
 }
 
 export function ClientPaymentsPanel({
@@ -28,6 +29,7 @@ export function ClientPaymentsPanel({
   onDelete,
   onTogglePaid,
   onToggleInvoice,
+  onApplyTemplate,
 }: ClientPaymentsPanelProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ClientPayment | null>(null)
@@ -73,6 +75,24 @@ export function ClientPaymentsPanel({
           <Plus size={16} />
           입금 회차 추가
         </button>
+        {revenue > 0 && payments.length === 0 && onApplyTemplate && (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              if (
+                confirm(
+                  '계약금 30% · 중도금 40% · 잔금 30% 회차를 추가할까요?\n기존 회차가 있으면 이 버튼은 표시되지 않습니다.',
+                )
+              ) {
+                onApplyTemplate()
+              }
+            }}
+          >
+            <Layers size={16} />
+            30·40·30
+          </button>
+        )}
       </header>
 
       {revenue > 0 && payments.length > 0 && (

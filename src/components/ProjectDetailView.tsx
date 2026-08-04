@@ -28,7 +28,10 @@ interface ProjectDetailViewProps {
   project: Project
   spent: number
   remaining: number
+  committedRemaining: number
+  unpaidLabor: number
   usageRatio: number
+  committedUsageRatio: number
   netProfit: number
   margin: number | null
   received: number
@@ -70,6 +73,7 @@ interface ProjectDetailViewProps {
   onUpdateLaborPayment: (id: string, data: Omit<LaborPayment, 'id'>) => void
   onDeleteLaborPayment: (id: string) => void
   onToggleLaborPaymentPaid: (id: string, isPaid: boolean) => void
+  onApplyClientPaymentTemplate: () => void
   allProjects: Project[]
   ledgerMonth: string
   onMonthChange: (month: string) => void
@@ -80,7 +84,10 @@ export function ProjectDetailView({
   project,
   spent,
   remaining,
+  committedRemaining,
+  unpaidLabor,
   usageRatio,
+  committedUsageRatio,
   netProfit,
   margin,
   received,
@@ -111,6 +118,7 @@ export function ProjectDetailView({
   onUpdateLaborPayment,
   onDeleteLaborPayment,
   onToggleLaborPaymentPaid,
+  onApplyClientPaymentTemplate,
   allProjects,
   ledgerMonth,
   onMonthChange,
@@ -138,7 +146,10 @@ export function ProjectDetailView({
         project={project}
         spent={spent}
         remaining={remaining}
+        committedRemaining={committedRemaining}
+        unpaidLabor={unpaidLabor}
         usageRatio={usageRatio}
+        committedUsageRatio={committedUsageRatio}
         netProfit={netProfit}
         showBack={showBack}
         onBack={onBack}
@@ -190,6 +201,8 @@ export function ProjectDetailView({
               margin={margin}
               budget={project.totalBudget}
               remaining={remaining}
+              committedRemaining={committedRemaining}
+              unpaidLabor={unpaidLabor}
               received={received}
               outstanding={outstanding}
               cashInflow={cashFlow.inflow}
@@ -318,6 +331,7 @@ export function ProjectDetailView({
               onDelete={onDeleteClientPayment}
               onTogglePaid={onToggleClientPaymentPaid}
               onToggleInvoice={onToggleClientPaymentInvoice}
+              onApplyTemplate={onApplyClientPaymentTemplate}
             />
 
             <LaborPaymentsPanel

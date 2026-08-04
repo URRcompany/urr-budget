@@ -8,6 +8,8 @@ interface ProfitSummaryProps {
   margin: number | null
   budget: number
   remaining: number
+  committedRemaining: number
+  unpaidLabor: number
   received: number
   outstanding: number
   cashInflow: number
@@ -22,6 +24,8 @@ export function ProfitSummary({
   margin,
   budget,
   remaining,
+  committedRemaining,
+  unpaidLabor,
   received,
   outstanding,
   cashInflow,
@@ -109,6 +113,16 @@ export function ProfitSummary({
             {formatKRW(Math.abs(remaining))}
           </dd>
         </div>
+        {unpaidLabor > 0 && (
+          <div>
+            <dt>약정 포함 잔여</dt>
+            <dd className={committedRemaining < 0 ? 'danger' : 'warn-text'}>
+              {committedRemaining < 0 ? '− ' : ''}
+              {formatKRW(Math.abs(committedRemaining))}
+              <span className="muted"> · 미지급 {formatKRW(unpaidLabor)}</span>
+            </dd>
+          </div>
+        )}
       </dl>
     </section>
   )

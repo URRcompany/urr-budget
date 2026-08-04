@@ -236,6 +236,21 @@ export function projectSpent(project: Project): number {
   return project.expenses.reduce((sum, e) => sum + e.amount, 0)
 }
 
+/** 미지급 인건비 (약정·확정 비용) */
+export function projectUnpaidLabor(project: Project): number {
+  return project.laborPayments
+    .filter((p) => !p.isPaid)
+    .reduce((sum, p) => sum + p.amount, 0)
+}
+
+/** 집행 + 미지급 인건비 (약정 포함) */
+export function projectCommittedSpent(project: Project): number {
+  return projectSpent(project) + projectUnpaidLabor(project)
+}
+
+/** 시스템 카테고리 — 삭제 불가 */
+export const PROTECTED_CATEGORY_IDS = new Set(['labor'])
+
 export function projectNetProfit(project: Project): number {
   return project.revenue - projectSpent(project)
 }

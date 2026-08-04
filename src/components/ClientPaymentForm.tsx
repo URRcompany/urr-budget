@@ -90,6 +90,15 @@ export function ClientPaymentForm({
       setError('올바른 금액을 입력해 주세요.')
       return
     }
+    if (revenue > 0 && overAllocated > 0) {
+      if (
+        !confirm(
+          `계약금액을 ${formatKRW(overAllocated)} 초과합니다.\n그래도 저장할까요?`,
+        )
+      ) {
+        return
+      }
+    }
     onSubmit({
       label: form.label.trim(),
       amount: Math.round(amountNum),

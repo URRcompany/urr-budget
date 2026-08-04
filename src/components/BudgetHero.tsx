@@ -7,7 +7,10 @@ interface BudgetHeroProps {
   project: Project
   spent: number
   remaining: number
+  committedRemaining: number
+  unpaidLabor: number
   usageRatio: number
+  committedUsageRatio: number
   netProfit: number
   showBack?: boolean
   onBack: () => void
@@ -22,7 +25,10 @@ export function BudgetHero({
   project,
   spent,
   remaining,
+  committedRemaining,
+  unpaidLabor,
   usageRatio,
+  committedUsageRatio,
   netProfit,
   showBack = true,
   onBack,
@@ -30,7 +36,9 @@ export function BudgetHero({
 }: BudgetHeroProps) {
   const [editing, setEditing] = useState(false)
   const over = remaining < 0
+  const committedOver = committedRemaining < 0
   const pct = Math.round(usageRatio * 100)
+  const committedPct = Math.round(committedUsageRatio * 100)
 
   return (
     <section className="hero hero--detail">
@@ -164,15 +172,34 @@ export function BudgetHero({
               className={`meter__fill ${over ? 'meter__fill--over' : ''}`}
               style={{ width: `${Math.min(pct, 100)}%` }}
             />
+            {unpaidLabor > 0 && (
+              <div
+                className="meter__fill meter__fill--committed"
+                style={{
+                  width: `${Math.min(committedPct, 100)}%`,
+                }}
+                title={`약정 포함 ${committedPct}%`}
+              />
+            )}
           </div>
           <div className="meter__legend">
             <span>
               집행 <strong>{formatKRW(spent)}</strong>
             </span>
+            {unpaidLabor > 0 && (
+              <span className="warn-text">
+                약정 <strong>{formatKRW(unpaidLabor)}</strong>
+              </span>
+            )}
             <span className={over ? 'danger' : ''}>
               {over ? '예산 초과' : '예산 잔여'}{' '}
               <strong>{formatKRW(Math.abs(remaining))}</strong>
             </span>
+            {unpaidLabor > 0 && (
+              <span className={committedOver ? 'danger' : 'muted'}>
+                약정 잔여 <strong>{formatKRW(Math.abs(committedRemaining))}</strong>
+              </span>
+            )}
             <span className="muted">{pct}%</span>
           </div>
         </div>
