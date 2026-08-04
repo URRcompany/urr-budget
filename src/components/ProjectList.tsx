@@ -57,7 +57,7 @@ export function ProjectList({
           <p className="brand">ReelBudget</p>
           <h1 className="home-hero__title">영상제작 프로젝트 예산</h1>
           <p className="home-hero__sub">
-            월별 매출·매입 장부로 「7월에 얼마 벌었는지」 바로 확인하세요.
+            월별 매출·매입 장부로 이번 달 수익을 바로 확인하세요.
           </p>
 
           <div className="portfolio-strip portfolio-strip--ledger">
