@@ -10,6 +10,7 @@ import {
 } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 import { BackupControls } from './BackupControls'
+import { UserBar } from './UserBar'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
@@ -61,6 +62,7 @@ export function ProjectList({
         <div className="home-hero__atmosphere" aria-hidden />
         <div className="home-hero__content">
           <p className="brand">ReelBudget</p>
+          <UserBar compact />
           <h1 className="home-hero__title">영상제작 프로젝트 예산</h1>
           <p className="home-hero__sub">
             월별 매출·매입 장부로 이번 달 수익을 바로 확인하세요.

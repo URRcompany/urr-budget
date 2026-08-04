@@ -9,6 +9,7 @@ import {
 } from '../types'
 import { formatCompactKRW, formatKRW } from '../lib/format'
 import { BackupControls } from './BackupControls'
+import { UserBar } from './UserBar'
 
 interface ProjectSidebarProps {
   projects: Project[]
@@ -195,6 +196,8 @@ export function ProjectSidebar({
           })
         )}
       </nav>
+
+      <UserBar compact />
     </aside>
   )
 }

@@ -19,6 +19,13 @@ function createWindow() {
     },
   })
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://accounts.google.com/')) {
+      return { action: 'allow' }
+    }
+    return { action: 'deny' }
+  })
+
   if (isDev) {
     win.loadURL('http://localhost:5173')
   } else {

@@ -2709,3 +2709,186 @@ button {
 .backup-controls__msg--err {
   color: var(--danger);
 }
+
+.login-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--bg, #eef1f4);
+  position: relative;
+}
+
+.login-screen--loading {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+.login-screen__atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(196, 120, 42, 0.12), transparent),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(42, 111, 124, 0.1), transparent);
+  pointer-events: none;
+}
+
+.login-screen__card {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 2rem 1.75rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(20, 24, 31, 0.08);
+  border: 1px solid rgba(20, 24, 31, 0.06);
+}
+
+.login-screen__title {
+  margin: 0.5rem 0 0.35rem;
+  font-size: var(--text-xl, 1.35rem);
+  letter-spacing: -0.02em;
+}
+
+.login-screen__sub {
+  margin: 0 0 1.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.login-screen__actions {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.login-screen__setup {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: rgba(196, 120, 42, 0.08);
+  border: 1px solid rgba(196, 120, 42, 0.2);
+  font-size: var(--text-sm);
+}
+
+.login-screen__setup strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.login-screen__code {
+  margin: 0.65rem 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(20, 24, 31, 0.05);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.login-screen__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.login-screen__error {
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(217, 106, 74, 0.1);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.user-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(20, 24, 31, 0.04);
+  margin-top: 0.5rem;
+}
+
+.user-bar--compact {
+  padding: 0.35rem 0.5rem;
+  margin-top: 0;
+  background: transparent;
+}
+
+.user-bar__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.user-bar__avatar--fallback {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #c4782a;
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.user-bar--compact .user-bar__avatar--fallback {
+  width: 28px;
+  height: 28px;
+}
+
+.user-bar__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.user-bar__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-bar__email {
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-bar__logout {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.hero__nav .user-bar {
+  margin-left: auto;
+}
+
+.home-hero__content > .user-bar {
+  margin-bottom: 0.75rem;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.sidebar .user-bar {
+  margin: 0.75rem 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar .user-bar__name,
+.sidebar .user-bar__email {
+  color: rgba(244, 241, 234, 0.92);
+}
+
+.sidebar .user-bar__email {
+  color: rgba(244, 241, 234, 0.55);
+}
