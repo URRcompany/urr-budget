@@ -31,7 +31,6 @@ function App() {
     addExpense,
     updateExpense,
     deleteExpense,
-    resetSamples,
     addClientPayment,
     updateClientPayment,
     deleteClientPayment,
@@ -122,7 +121,6 @@ function App() {
           onSelect={openProject}
           onDelete={deleteProject}
           onCreate={createProject}
-          onResetSamples={resetSamples}
         />
         <div className="desktop-main">
           {detail ?? (
@@ -149,7 +147,6 @@ function App() {
           onOpen={openProject}
           onDelete={deleteProject}
           onCreate={createProject}
-          onResetSamples={resetSamples}
         />
       </div>
     )

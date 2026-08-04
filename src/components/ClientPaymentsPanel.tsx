@@ -238,7 +238,7 @@ function PaymentAddForm({
         })
       }}
     >
-      <input name="label" required placeholder="회차명 (예: 계약금)" autoFocus />
+      <input name="label" required placeholder="회차명" autoFocus />
       <input name="amount" type="number" min={0} step={100000} required placeholder="금액" />
       <input name="dueDate" type="date" />
       <input name="note" placeholder="메모 (선택)" />

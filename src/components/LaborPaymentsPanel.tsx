@@ -185,7 +185,7 @@ function LaborAddForm({
       }}
     >
       <input name="name" required placeholder="이름" autoFocus />
-      <input name="role" placeholder="역할 (예: DP, 조명)" />
+      <input name="role" placeholder="역할" />
       <input name="amount" type="number" min={0} step={100000} required placeholder="금액" />
       <input name="workDate" type="date" />
       <input name="note" placeholder="메모 (선택)" />

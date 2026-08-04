@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderPlus, RotateCcw, Trash2 } from 'lucide-react'
+import { FolderPlus, Trash2 } from 'lucide-react'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
@@ -27,7 +27,6 @@ interface ProjectSidebarProps {
     revenue: number
     totalBudget: number
   }) => void
-  onResetSamples: () => void
 }
 
 export function ProjectSidebar({
@@ -37,7 +36,6 @@ export function ProjectSidebar({
   onSelect,
   onDelete,
   onCreate,
-  onResetSamples,
 }: ProjectSidebarProps) {
   const [creating, setCreating] = useState(false)
 
@@ -79,22 +77,6 @@ export function ProjectSidebar({
         >
           <FolderPlus size={16} />
           새 프로젝트
-        </button>
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm btn--block"
-          onClick={() => {
-            if (
-              confirm(
-                '샘플 프로젝트로 초기화할까요? 현재 데이터가 모두 덮어씌워집니다.',
-              )
-            ) {
-              onResetSamples()
-            }
-          }}
-        >
-          <RotateCcw size={14} />
-          샘플 불러오기
         </button>
       </div>
 

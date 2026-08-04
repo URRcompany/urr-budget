@@ -113,7 +113,7 @@ export function ExpenseForm({
               autoFocus
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="예: 카메라 렌탈"
+              placeholder="지출 항목"
             />
           </label>
 

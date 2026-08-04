@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderPlus, RotateCcw, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
@@ -33,7 +33,6 @@ interface ProjectListProps {
     revenue: number
     totalBudget: number
   }) => void
-  onResetSamples: () => void
 }
 
 export function ProjectList({
@@ -44,7 +43,6 @@ export function ProjectList({
   onOpen,
   onDelete,
   onCreate,
-  onResetSamples,
 }: ProjectListProps) {
   const [creating, setCreating] = useState(false)
   const thisMonth = getMonthStats(projects, monthKey())
@@ -100,22 +98,6 @@ export function ProjectList({
             <p className="muted">카드를 눌러 예산·지출을 관리합니다</p>
           </div>
           <div className="section__actions">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => {
-                if (
-                  confirm(
-                    '샘플 프로젝트로 초기화할까요? 현재 데이터가 모두 덮어씌워집니다.',
-                  )
-                ) {
-                  onResetSamples()
-                }
-              }}
-            >
-              <RotateCcw size={15} />
-              샘플 불러오기
-            </button>
             <button
               type="button"
               className="btn btn--primary"
@@ -267,7 +249,7 @@ function ProjectCreateForm({
       <div className="field-row field-row--3">
         <label className="field">
           <span>프로젝트명</span>
-          <input name="name" required placeholder="예: CF — 가을 캠페인" autoFocus />
+          <input name="name" required placeholder="프로젝트명" autoFocus />
         </label>
         <label className="field">
           <span>클라이언트</span>

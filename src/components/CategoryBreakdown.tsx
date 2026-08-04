@@ -133,7 +133,7 @@ export function CategoryBreakdown({
             autoFocus
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="예: 의상비, 보험료…"
+            placeholder="카테고리명"
           />
           <button type="submit" className="btn btn--primary btn--sm">
             추가

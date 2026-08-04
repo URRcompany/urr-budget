@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CATEGORY_PALETTE,
   createEmptyProject,
-  createSampleProjects,
   projectLaborStats,
   projectMargin,
   projectNetProfit,
@@ -22,6 +21,8 @@ import { monthKey } from '../lib/ledger'
 const STORAGE_KEY = 'reelbudget.store.v3'
 const STORAGE_KEY_V2 = 'reelbudget.store.v2'
 const LEGACY_KEY = 'reelbudget.project.v1'
+
+const SAMPLE_PROJECT_IDS = new Set(['p_sample_dawn', 'p_sample_mv'])
 
 function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>): Expense {
   return {
@@ -68,11 +69,19 @@ function normalizeProject(p: Partial<Project> & { name: string }): Project {
   }
 }
 
+function stripSampleProjects(store: AppStore): AppStore {
+  const projects = store.projects.filter((p) => !SAMPLE_PROJECT_IDS.has(p.id))
+  const activeProjectId =
+    store.activeProjectId && projects.some((p) => p.id === store.activeProjectId)
+      ? store.activeProjectId
+      : null
+  return { ...store, projects, activeProjectId }
+}
+
 function createInitialStore(): AppStore {
-  const projects = createSampleProjects()
   return {
     version: 3,
-    projects,
+    projects: [],
     activeProjectId: null,
   }
 }
@@ -119,10 +128,10 @@ function loadStore(): AppStore {
     if (raw) {
       const parsed = JSON.parse(raw) as AppStore
       if (parsed?.version === 3 && Array.isArray(parsed.projects)) {
-        return {
+        return stripSampleProjects({
           ...parsed,
           projects: parsed.projects.map((p) => normalizeProject(p)),
-        }
+        })
       }
     }
     const v2raw = localStorage.getItem(STORAGE_KEY_V2)
@@ -375,12 +384,6 @@ export function useStore() {
             },
       ),
     }))
-  }, [])
-
-  const resetSamples = useCallback(() => {
-    const projects = createSampleProjects()
-    setStore({ version: 3, projects, activeProjectId: null })
-    setFilter('all')
   }, [])
 
   const patchProject = useCallback(
@@ -641,7 +644,6 @@ export function useStore() {
     addExpense,
     updateExpense,
     deleteExpense,
-    resetSamples,
     addClientPayment,
     updateClientPayment,
     deleteClientPayment,
