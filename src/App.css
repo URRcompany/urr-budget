@@ -3167,3 +3167,68 @@ button {
     padding: 2rem 2rem 3rem;
   }
 }
+
+.tax-vat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.tax-vat-card {
+  padding: 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(20, 24, 31, 0.08);
+}
+
+.tax-vat-card h3 {
+  margin: 0 0 0.65rem;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.tax-vat-card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.75rem;
+  margin: 0;
+}
+
+.tax-vat-card dt {
+  font-size: var(--text-2xs);
+  color: var(--muted);
+}
+
+.tax-vat-card dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tax-all-clear {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  background: rgba(61, 107, 90, 0.1);
+  color: #3d6b5a;
+  font-size: var(--text-sm);
+}
+
+.home-hero__portfolio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.sidebar-nav-btn__badge--warn {
+  color: #ffc98a;
+}
+
+.tax-page .receivables-page__title {
+  max-width: 28rem;
+}

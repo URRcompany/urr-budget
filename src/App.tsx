@@ -6,7 +6,9 @@ import { ProjectSidebar } from './components/ProjectSidebar'
 import { ProjectDetailView } from './components/ProjectDetailView'
 import { WelcomePanel } from './components/WelcomePanel'
 import { ReceivablesDashboard } from './components/ReceivablesDashboard'
+import { TaxInvoiceDashboard } from './components/TaxInvoiceDashboard'
 import { getPortfolioReceivables } from './lib/receivables'
+import { getPortfolioTaxSummary } from './lib/taxLedger'
 import type { PortfolioView } from './types'
 import './App.css'
 
@@ -59,8 +61,9 @@ function App() {
   }, [isDesktop, activeProjectId, projects, openProject, portfolioView])
 
   const receivables = getPortfolioReceivables(projects)
+  const taxSummary = getPortfolioTaxSummary(projects)
 
-  const openProjectFromReceivables = (id: string) => {
+  const openProjectFromPortfolio = (id: string) => {
     setPortfolioView('projects')
     openProject(id)
   }
@@ -144,6 +147,7 @@ function App() {
           portfolio={portfolio}
           portfolioView={portfolioView}
           totalOutstanding={receivables.totalOutstanding}
+          taxAttentionCount={taxSummary.attentionCount}
           onSelect={(id) => {
             setPortfolioView('projects')
             openProject(id)
@@ -151,6 +155,10 @@ function App() {
           onShowReceivables={() => {
             closeProject()
             setPortfolioView('receivables')
+          }}
+          onShowTax={() => {
+            closeProject()
+            setPortfolioView('tax')
           }}
           onShowProjects={() => setPortfolioView('projects')}
           onDelete={deleteProject}
@@ -162,7 +170,12 @@ function App() {
           {portfolioView === 'receivables' ? (
             <ReceivablesDashboard
               projects={projects}
-              onOpenProject={openProjectFromReceivables}
+              onOpenProject={openProjectFromPortfolio}
+            />
+          ) : portfolioView === 'tax' ? (
+            <TaxInvoiceDashboard
+              projects={projects}
+              onOpenProject={openProjectFromPortfolio}
             />
           ) : (
             detail ?? (
@@ -186,7 +199,20 @@ function App() {
           projects={projects}
           showBack
           onBack={() => setPortfolioView('projects')}
-          onOpenProject={openProjectFromReceivables}
+          onOpenProject={openProjectFromPortfolio}
+        />
+      </div>
+    )
+  }
+
+  if (portfolioView === 'tax') {
+    return (
+      <div className="app">
+        <TaxInvoiceDashboard
+          projects={projects}
+          showBack
+          onBack={() => setPortfolioView('projects')}
+          onOpenProject={openProjectFromPortfolio}
         />
       </div>
     )
@@ -203,6 +229,8 @@ function App() {
           onMonthChange={setLedgerMonth}
           onOpen={openProject}
           onShowReceivables={() => setPortfolioView('receivables')}
+          onShowTax={() => setPortfolioView('tax')}
+          taxAttentionCount={taxSummary.attentionCount}
           onDelete={deleteProject}
           onCreate={createProject}
           onExportBackup={exportBackup}

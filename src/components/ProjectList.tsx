@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Banknote, FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { Banknote, FileText, FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
@@ -26,10 +26,12 @@ interface ProjectListProps {
     netProfit: number
   }
   totalOutstanding: number
+  taxAttentionCount: number
   ledgerMonth: string
   onMonthChange: (month: string) => void
   onOpen: (id: string) => void
   onShowReceivables: () => void
+  onShowTax: () => void
   onDelete: (id: string) => void
   onCreate: (input: {
     name: string
@@ -49,10 +51,12 @@ export function ProjectList({
   projects,
   portfolio,
   totalOutstanding,
+  taxAttentionCount,
   ledgerMonth,
   onMonthChange,
   onOpen,
   onShowReceivables,
+  onShowTax,
   onDelete,
   onCreate,
   onExportBackup,
@@ -99,17 +103,30 @@ export function ProjectList({
               <strong>{portfolio.count}</strong>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn--ghost receivables-cta"
-            onClick={onShowReceivables}
-          >
-            <Banknote size={18} />
-            미수금 현황 보기
-            {totalOutstanding > 0 && (
-              <span className="badge badge--warn">{formatKRW(totalOutstanding)}</span>
-            )}
-          </button>
+          <div className="home-hero__portfolio-actions">
+            <button
+              type="button"
+              className="btn btn--ghost receivables-cta"
+              onClick={onShowReceivables}
+            >
+              <Banknote size={18} />
+              미수금
+              {totalOutstanding > 0 && (
+                <span className="badge badge--warn">{formatKRW(totalOutstanding)}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost receivables-cta"
+              onClick={onShowTax}
+            >
+              <FileText size={18} />
+              세금·계산서
+              {taxAttentionCount > 0 && (
+                <span className="badge badge--warn">{taxAttentionCount}건 확인</span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

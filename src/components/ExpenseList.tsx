@@ -78,16 +78,17 @@ export function ExpenseList({
                     <span className="warn-text">계산서 미수령</span>
                   </>
                 )}
-                {tax.vat > 0 && (
+                {tax.vat > 0 ? (
                   <>
                     <span aria-hidden>·</span>
-                    <span>VAT {formatKRW(tax.vat)}</span>
+                    <span>
+                      공급 {formatKRW(tax.supply)} + VAT {formatKRW(tax.vat)}
+                    </span>
                   </>
-                )}
-                {e.vatMode && e.vatMode !== 'included' && (
+                ) : (
                   <>
                     <span aria-hidden>·</span>
-                    <span>{vatModeLabel(e.vatMode)}</span>
+                    <span>{vatModeLabel(tax.mode)}</span>
                   </>
                 )}
                 {hasReceipt && (

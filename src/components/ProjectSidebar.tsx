@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Banknote, FolderPlus, Trash2 } from 'lucide-react'
+import { Banknote, FileText, FolderPlus, Trash2 } from 'lucide-react'
 import type { PortfolioView } from '../types'
 import {
   projectClientPaymentProgress,
@@ -24,8 +24,10 @@ interface ProjectSidebarProps {
   }
   portfolioView: PortfolioView
   totalOutstanding: number
+  taxAttentionCount: number
   onSelect: (id: string) => void
   onShowReceivables: () => void
+  onShowTax: () => void
   onShowProjects: () => void
   onDelete: (id: string) => void
   onCreate: (input: {
@@ -48,8 +50,10 @@ export function ProjectSidebar({
   portfolio,
   portfolioView,
   totalOutstanding,
+  taxAttentionCount,
   onSelect,
   onShowReceivables,
+  onShowTax,
   onShowProjects,
   onDelete,
   onCreate,
@@ -102,6 +106,19 @@ export function ProjectSidebar({
             <span className="sidebar-nav-btn__badge">{formatCompactKRW(totalOutstanding)}</span>
           )}
         </button>
+        <button
+          type="button"
+          className={`sidebar-nav-btn ${portfolioView === 'tax' ? 'sidebar-nav-btn--active' : ''}`}
+          onClick={onShowTax}
+        >
+          <FileText size={16} />
+          세금·계산서
+          {taxAttentionCount > 0 && (
+            <span className="sidebar-nav-btn__badge sidebar-nav-btn__badge--warn">
+              {taxAttentionCount}건
+            </span>
+          )}
+        </button>
       </nav>
 
       <div className="sidebar__actions">
@@ -127,7 +144,7 @@ export function ProjectSidebar({
       />
 
       <nav className="sidebar__list" aria-label="프로젝트">
-        {portfolioView === 'receivables' && (
+        {portfolioView !== 'projects' && (
           <button
             type="button"
             className="sidebar__back-projects muted"
