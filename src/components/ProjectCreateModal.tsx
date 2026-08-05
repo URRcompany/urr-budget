@@ -1,4 +1,5 @@
 import { useEffect, useId } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { ProjectCreateForm } from './ProjectCreateForm'
 
@@ -24,12 +25,17 @@ export function ProjectCreateModal({ open, onClose, onSubmit }: ProjectCreateMod
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
   }, [open, onClose])
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop modal-backdrop--center"
       role="presentation"
@@ -66,6 +72,7 @@ export function ProjectCreateModal({ open, onClose, onSubmit }: ProjectCreateMod
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

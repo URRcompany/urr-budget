@@ -12,7 +12,7 @@ import { formatDate, formatKRW } from '../lib/format'
 import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 import { BackupControls } from './BackupControls'
-import { ProjectCreateForm } from './ProjectCreateForm'
+import { ProjectCreateModal } from './ProjectCreateModal'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
@@ -160,26 +160,6 @@ export function ProjectList({
           </div>
         </header>
 
-        {creating && (
-          <div className="create-form">
-            <ProjectCreateForm
-              formId="project-create-mobile"
-              onSubmit={(data) => {
-                onCreate(data)
-                setCreating(false)
-              }}
-            />
-            <div className="form-actions">
-              <button type="button" className="btn btn--ghost" onClick={() => setCreating(false)}>
-                취소
-              </button>
-              <button type="submit" form="project-create-mobile" className="btn btn--primary">
-                만들기
-              </button>
-            </div>
-          </div>
-        )}
-
         {projects.length === 0 ? (
           <div className="empty">
             <p>프로젝트가 없습니다.</p>
@@ -275,6 +255,12 @@ export function ProjectList({
           </ul>
         )}
       </section>
+
+      <ProjectCreateModal
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSubmit={onCreate}
+      />
     </div>
   )
 }
