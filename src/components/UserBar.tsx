@@ -21,11 +21,11 @@ export function UserBar({ compact = false }: UserBarProps) {
         />
       ) : (
         <span className="user-bar__avatar user-bar__avatar--fallback" aria-hidden>
-          {user.name.slice(0, 1)}
+          {(user.name || user.email).slice(0, 1)}
         </span>
       )}
       <div className="user-bar__info">
-        <strong className="user-bar__name">{user.name}</strong>
+        <strong className="user-bar__name">{user.name || user.email}</strong>
         {!compact && <span className="user-bar__email muted">{user.email}</span>}
       </div>
       <button

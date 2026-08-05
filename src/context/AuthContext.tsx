@@ -51,6 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const session: AuthSession = saveAuthSession(verified)
       setUser(session)
       setError(null)
+      // Electron: OAuth 팝업 닫힌 뒤 메인 창이 하얗게 되는 경우 방지
+      if (window.electronAPI?.isDesktop) {
+        window.location.reload()
+      }
     } catch (err) {
       clearAuthSession()
       setUser(null)

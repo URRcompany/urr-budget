@@ -16,6 +16,7 @@ export interface AuthSession extends AuthUser {
 interface GoogleJwtPayload {
   email?: string
   name?: string
+  given_name?: string
   picture?: string
   exp?: number
 }
@@ -40,7 +41,7 @@ export function isEmailAllowed(email: string): boolean {
 
 export function verifyGoogleCredential(credential: string): AuthUser {
   const payload = jwtDecode<GoogleJwtPayload>(credential)
-  if (!payload.email || !payload.name) {
+  if (!payload.email) {
     throw new Error('Google 계정 정보를 읽을 수 없습니다.')
   }
   if (!payload.exp || payload.exp * 1000 <= Date.now()) {
@@ -49,9 +50,13 @@ export function verifyGoogleCredential(credential: string): AuthUser {
   if (!isEmailAllowed(payload.email)) {
     throw new Error('접근 권한이 없는 계정입니다.')
   }
+  const name =
+    payload.name?.trim() ||
+    payload.given_name?.trim() ||
+    payload.email.split('@')[0]
   return {
     email: payload.email,
-    name: payload.name,
+    name,
     picture: payload.picture,
   }
 }
@@ -62,6 +67,9 @@ export function loadAuthSession(): AuthSession | null {
     if (!raw) return null
     const session = JSON.parse(raw) as AuthSession
     if (!session.email || !session.loggedInAt) return null
+    if (!session.name?.trim()) {
+      session.name = session.email.split('@')[0]
+    }
     if (Date.now() - session.loggedInAt > SESSION_MAX_AGE_MS) {
       localStorage.removeItem(AUTH_STORAGE_KEY)
       return null

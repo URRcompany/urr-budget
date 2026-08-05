@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
 import { AuthGate } from './components/AuthGate'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { getGoogleClientId } from './lib/auth'
 
 if (window.electronAPI?.isDesktop) {
@@ -16,18 +17,20 @@ const clientId = getGoogleClientId()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      {clientId ? (
-        <GoogleOAuthProvider clientId={clientId}>
+    <ErrorBoundary>
+      <AuthProvider>
+        {clientId ? (
+          <GoogleOAuthProvider clientId={clientId}>
+            <AuthGate>
+              <App />
+            </AuthGate>
+          </GoogleOAuthProvider>
+        ) : (
           <AuthGate>
             <App />
           </AuthGate>
-        </GoogleOAuthProvider>
-      ) : (
-        <AuthGate>
-          <App />
-        </AuthGate>
-      )}
-    </AuthProvider>
+        )}
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
