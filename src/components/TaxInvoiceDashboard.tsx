@@ -8,6 +8,7 @@ import { getPortfolioTaxSummary } from '../lib/taxLedger'
 import { formatDate, formatKRW } from '../lib/format'
 import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
 import type { Project } from '../types'
+import { AppBrand } from './AppBrand'
 
 interface TaxInvoiceDashboardProps {
   projects: Project[]
@@ -38,7 +39,7 @@ export function TaxInvoiceDashboard({
           </button>
         )}
         <div>
-          <p className="brand brand--sm">ReelBudget</p>
+          <AppBrand size="sm" />
           <h1 className="receivables-page__title">세금·계산서 현황</h1>
           <p className="muted">
             매출 세금계산서 발행 여부와 매입 부가세·계산서 수령을 한곳에서 확인하세요.

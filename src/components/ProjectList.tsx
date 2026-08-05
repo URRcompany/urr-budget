@@ -9,8 +9,9 @@ import {
   type Project,
 } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
-import { BackupControls } from './BackupControls'
+import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
+import { BackupControls } from './BackupControls'
 import { ProjectCreateForm } from './ProjectCreateForm'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
@@ -70,7 +71,7 @@ export function ProjectList({
       <header className="home-hero">
         <div className="home-hero__atmosphere" aria-hidden />
         <div className="home-hero__content">
-          <p className="brand">ReelBudget</p>
+          <AppBrand />
           <UserBar compact />
           <h1 className="home-hero__title">영상제작 프로젝트 예산</h1>
           <p className="home-hero__sub">

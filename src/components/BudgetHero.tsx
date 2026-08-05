@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Settings2 } from 'lucide-react'
 import type { Project } from '../types'
 import { formatKRW } from '../lib/format'
+import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 
 interface BudgetHeroProps {
@@ -52,7 +53,7 @@ export function BudgetHero({
               프로젝트 목록
             </button>
           )}
-          <p className="brand brand--sm">ReelBudget</p>
+          <AppBrand size="sm" />
           <UserBar compact />
         </div>
 

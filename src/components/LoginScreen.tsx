@@ -2,6 +2,7 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { AppBrand } from './AppBrand'
 
 export function LoginScreen() {
   const { clientId, allowedConfigured, error, signInWithCredential, clearError } = useAuth()
@@ -26,7 +27,7 @@ export function LoginScreen() {
     <div className="login-screen">
       <div className="login-screen__atmosphere" aria-hidden />
       <div className="login-screen__card">
-        <p className="brand">ReelBudget</p>
+        <AppBrand showAppName />
         <h1 className="login-screen__title">로그인이 필요합니다</h1>
         <p className="login-screen__sub muted">
           개인 예산 데이터 보호를 위해 Google 계정으로만 접속할 수 있습니다.

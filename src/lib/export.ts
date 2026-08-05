@@ -5,7 +5,10 @@ import {
   type LedgerEntry,
 } from './ledger'
 import type { Project } from '../types'
+import { APP_NAME, COMPANY_NAME } from './brand'
 import { getOverduePayments } from './receivables'
+
+const exportLabel = `${COMPANY_NAME} ${APP_NAME}`
 
 function escapeCell(value: string | number): string {
   return `"${String(value).replace(/"/g, '""')}"`
@@ -53,7 +56,7 @@ export function exportMonthlyLedgerCSV(
     : '전체'
 
   const rows: (string | number)[][] = [
-    ['ReelBudget 월별 장부'],
+    [`${exportLabel} 월별 장부`],
     ['기간', formatMonthLabel(month)],
     ['범위', scope],
     ['매출', stats.sales],
@@ -64,13 +67,13 @@ export function exportMonthlyLedgerCSV(
     ...entries.map(ledgerRow),
   ]
 
-  downloadCSV(`ReelBudget_${label}_${scope}.csv`, rowsToCSV(rows))
+  downloadCSV(`${APP_NAME}_${label}_${scope}.csv`, rowsToCSV(rows))
 }
 
 /** 프로젝트 전체 요약 CSV */
 export function exportProjectCSV(project: Project) {
   const rows: (string | number)[][] = [
-    ['ReelBudget 프로젝트 내보내기'],
+    [`${exportLabel} 프로젝트 내보내기`],
     ['프로젝트', project.name],
     ['클라이언트', project.client],
     ['계약금액', project.revenue],
@@ -122,13 +125,13 @@ export function exportProjectCSV(project: Project) {
     ]),
   ]
 
-  downloadCSV(`ReelBudget_${project.name.replace(/\s/g, '_')}.csv`, rowsToCSV(rows))
+  downloadCSV(`${APP_NAME}_${project.name.replace(/\s/g, '_')}.csv`, rowsToCSV(rows))
 }
 
 /** 전체 프로젝트 연간 요약 CSV */
 export function exportYearlySummaryCSV(projects: Project[], year: number) {
   const rows: (string | number)[][] = [
-    ['ReelBudget 연간 요약'],
+    [`${exportLabel} 연간 요약`],
     ['연도', year],
     [],
     ['월', '매출', '매입', '순이익'],
@@ -154,5 +157,5 @@ export function exportYearlySummaryCSV(projects: Project[], year: number) {
     }
   }
 
-  downloadCSV(`ReelBudget_${year}년_요약.csv`, rowsToCSV(rows))
+  downloadCSV(`${APP_NAME}_${year}년_요약.csv`, rowsToCSV(rows))
 }

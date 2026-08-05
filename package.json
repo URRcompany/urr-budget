@@ -34,7 +34,7 @@
   },
   "build": {
     "appId": "com.reelbudget.app",
-    "productName": "ReelBudget",
+    "productName": "URRcompany ReelBudget",
     "directories": {
       "output": "release"
     },

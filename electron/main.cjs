@@ -16,7 +16,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'ReelBudget',
+    title: 'URRcompany · ReelBudget',
     backgroundColor: '#eef1f4',
     autoHideMenuBar: true,
     webPreferences: {

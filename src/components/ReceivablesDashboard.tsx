@@ -2,6 +2,7 @@ import { AlertTriangle, Banknote, CalendarClock, CheckCircle2 } from 'lucide-rea
 import { getPortfolioReceivables } from '../lib/receivables'
 import { formatDate, formatKRW } from '../lib/format'
 import type { Project } from '../types'
+import { AppBrand } from './AppBrand'
 
 interface ReceivablesDashboardProps {
   projects: Project[]
@@ -28,7 +29,7 @@ export function ReceivablesDashboard({
           </button>
         )}
         <div>
-          <p className="brand brand--sm">ReelBudget</p>
+          <AppBrand size="sm" />
           <h1 className="receivables-page__title">미수금 현황</h1>
           <p className="muted">프로젝트별로 받아야 할 금액과 입금 회차를 확인하세요.</p>
         </div>

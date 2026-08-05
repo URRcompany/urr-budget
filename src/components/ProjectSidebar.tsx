@@ -12,6 +12,7 @@ import { formatCompactKRW, formatKRW } from '../lib/format'
 import { BackupControls } from './BackupControls'
 import { UserBar } from './UserBar'
 import { ProjectCreateModal } from './ProjectCreateModal'
+import { AppBrand } from './AppBrand'
 
 interface ProjectSidebarProps {
   projects: Project[]
@@ -65,7 +66,7 @@ export function ProjectSidebar({
   return (
     <aside className="sidebar" aria-label="프로젝트 목록">
       <div className="sidebar__brand">
-        <p className="sidebar__logo">ReelBudget</p>
+        <AppBrand size="sm" inverted />
         <span className="sidebar__badge">PC</span>
       </div>
 

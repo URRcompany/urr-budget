@@ -142,6 +142,72 @@ button {
   animation: none;
 }
 
+.app-brand {
+  margin-bottom: 1.25rem;
+  animation: rise 0.8s 0.08s ease both;
+}
+
+.app-brand__company {
+  font-weight: var(--weight-extrabold);
+  font-size: clamp(var(--text-4xl), 7vw, var(--text-5xl));
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tighter);
+  margin: 0;
+  color: #14181f;
+}
+
+.app-brand__app {
+  font-size: clamp(var(--text-sm), 1.8vw, var(--text-md));
+  font-weight: var(--weight-bold);
+  color: #c4782a;
+  margin: 0.2rem 0 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.app-brand--sm {
+  margin-bottom: 0;
+  animation: none;
+}
+
+.app-brand--sm .app-brand__company {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.app-brand--sm .app-brand__app {
+  font-size: var(--text-xs);
+  margin-top: 0.05rem;
+}
+
+.app-brand--inverted .app-brand__company {
+  color: #f4f1ea;
+}
+
+.app-brand--inverted .app-brand__app {
+  color: #f0c896;
+  opacity: 0.9;
+}
+
+.home-hero .app-brand__company,
+.hero .app-brand:not(.app-brand--inverted) .app-brand__company {
+  color: #f4f1ea;
+  text-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+}
+
+.home-hero .app-brand__app,
+.hero .app-brand:not(.app-brand--inverted) .app-brand__app {
+  color: #f0c896;
+}
+
+.login-screen__card .app-brand {
+  margin-bottom: 0.35rem;
+  animation: none;
+}
+
+.login-screen__card .app-brand__company {
+  font-size: var(--text-2xl);
+}
+
 .hero--detail {
   min-height: min(58vh, 480px);
   padding-top: 2rem;
@@ -2381,16 +2447,14 @@ button {
 
   .sidebar__brand {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 0.5rem;
   }
 
-  .sidebar__logo {
-    font-weight: var(--weight-extrabold);
-    font-size: var(--text-2xl);
-    letter-spacing: var(--tracking-tighter);
-    line-height: var(--leading-tight);
-    margin: 0;
+  .sidebar__brand .app-brand {
+    flex: 1;
+    min-width: 0;
   }
 
   .sidebar__badge {

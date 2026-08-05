@@ -1,5 +1,6 @@
 import type { Project } from '../types'
 import { categoryPlannedTotal } from './budget'
+import { COMPANY_NAME, APP_NAME } from './brand'
 import { formatDate, formatKRW } from './format'
 import { calcSupplyFromTotal, VAT_RATE } from './vat'
 
@@ -62,7 +63,8 @@ function buildQuotationHTML(project: Project): string {
     .totals div { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid #eef1f4; }
     .totals .grand { font-size: 1.15rem; font-weight: 700; border-bottom: none; padding-top: 0.5rem; }
     .note { margin-top: 2rem; font-size: 0.82rem; color: #6b7380; }
-    .brand { font-size: 0.85rem; color: #c4782a; font-weight: 700; margin-bottom: 0.5rem; }
+    .brand-company { font-size: 1rem; color: #14181f; font-weight: 800; margin-bottom: 0.15rem; letter-spacing: -0.02em; }
+    .brand-app { font-size: 0.85rem; color: #c4782a; font-weight: 700; margin-bottom: 0.5rem; }
     @media print {
       body { padding: 24px 32px; }
       @page { margin: 16mm; }
@@ -70,7 +72,8 @@ function buildQuotationHTML(project: Project): string {
   </style>
 </head>
 <body>
-  <p class="brand">ReelBudget</p>
+  <p class="brand-company">${escapeHtml(COMPANY_NAME)}</p>
+  <p class="brand-app">${escapeHtml(APP_NAME)}</p>
   <h1>영상 제작 견적서</h1>
   <p class="sub">작성일 ${today}</p>
 
@@ -99,7 +102,7 @@ function buildQuotationHTML(project: Project): string {
   </div>
 
   <p class="note">
-    · 본 견적은 ReelBudget 프로젝트 배정 예산을 기준으로 작성되었습니다.<br />
+    · 본 견적은 ${escapeHtml(COMPANY_NAME)} ${escapeHtml(APP_NAME)} 프로젝트 배정 예산을 기준으로 작성되었습니다.<br />
     · 실제 집행액은 촬영·후반 진행에 따라 변동될 수 있습니다.<br />
     · PDF 저장: 인쇄 대화상자에서 「PDF로 저장」을 선택하세요.
   </p>

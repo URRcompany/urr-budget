@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { AppBrand } from './AppBrand'
 
 interface Props {
   children: ReactNode
@@ -24,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="login-screen">
           <div className="login-screen__card">
-            <p className="brand">ReelBudget</p>
+            <AppBrand />
             <h1 className="login-screen__title">화면을 불러오지 못했습니다</h1>
             <p className="login-screen__error" role="alert">
               {this.state.error.message}
