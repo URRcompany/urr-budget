@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from './hooks/useStore'
 import { useIsDesktop } from './hooks/useIsDesktop'
 import { ProjectList } from './components/ProjectList'
@@ -15,6 +15,7 @@ import './App.css'
 function App() {
   const isDesktop = useIsDesktop()
   const [portfolioView, setPortfolioView] = useState<PortfolioView>('projects')
+  const initialDesktopOpenDone = useRef(false)
   const {
     projects,
     activeProject,
@@ -55,13 +56,25 @@ function App() {
   } = useStore()
 
   useEffect(() => {
-    if (isDesktop && !activeProjectId && projects.length > 0 && portfolioView === 'projects') {
+    if (
+      isDesktop &&
+      !initialDesktopOpenDone.current &&
+      !activeProjectId &&
+      projects.length > 0 &&
+      portfolioView === 'projects'
+    ) {
+      initialDesktopOpenDone.current = true
       openProject(projects[0].id)
     }
   }, [isDesktop, activeProjectId, projects, openProject, portfolioView])
 
   const receivables = getPortfolioReceivables(projects)
   const taxSummary = getPortfolioTaxSummary(projects)
+
+  const goHome = () => {
+    setPortfolioView('projects')
+    closeProject()
+  }
 
   const openProjectFromPortfolio = (id: string) => {
     setPortfolioView('projects')
@@ -160,7 +173,7 @@ function App() {
             closeProject()
             setPortfolioView('tax')
           }}
-          onShowProjects={() => setPortfolioView('projects')}
+          onShowProjects={goHome}
           onDelete={deleteProject}
           onCreate={createProject}
           onExportBackup={exportBackup}
@@ -170,11 +183,15 @@ function App() {
           {portfolioView === 'receivables' ? (
             <ReceivablesDashboard
               projects={projects}
+              showBack
+              onBack={goHome}
               onOpenProject={openProjectFromPortfolio}
             />
           ) : portfolioView === 'tax' ? (
             <TaxInvoiceDashboard
               projects={projects}
+              showBack
+              onBack={goHome}
               onOpenProject={openProjectFromPortfolio}
             />
           ) : (
@@ -198,7 +215,7 @@ function App() {
         <ReceivablesDashboard
           projects={projects}
           showBack
-          onBack={() => setPortfolioView('projects')}
+          onBack={goHome}
           onOpenProject={openProjectFromPortfolio}
         />
       </div>
@@ -211,7 +228,7 @@ function App() {
         <TaxInvoiceDashboard
           projects={projects}
           showBack
-          onBack={() => setPortfolioView('projects')}
+          onBack={goHome}
           onOpenProject={openProjectFromPortfolio}
         />
       </div>

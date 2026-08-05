@@ -150,7 +150,7 @@ export function ProjectSidebar({
             className="sidebar__back-projects muted"
             onClick={onShowProjects}
           >
-            ← 프로젝트 목록으로
+            ← 홈으로
           </button>
         )}
         {projects.length === 0 ? (

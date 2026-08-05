@@ -24,7 +24,7 @@ export function ReceivablesDashboard({
       <header className="receivables-page__hero">
         {showBack && onBack && (
           <button type="button" className="btn btn--ghost btn--sm receivables-page__back" onClick={onBack}>
-            ← 프로젝트 목록
+            ← 홈으로
           </button>
         )}
         <div>

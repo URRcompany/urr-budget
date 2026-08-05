@@ -34,7 +34,7 @@ export function TaxInvoiceDashboard({
             className="btn btn--ghost btn--sm receivables-page__back"
             onClick={onBack}
           >
-            ← 프로젝트 목록
+            ← 홈으로
           </button>
         )}
         <div>
