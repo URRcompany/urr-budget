@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { Banknote, FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
@@ -24,9 +24,11 @@ interface ProjectListProps {
     spent: number
     netProfit: number
   }
+  totalOutstanding: number
   ledgerMonth: string
   onMonthChange: (month: string) => void
   onOpen: (id: string) => void
+  onShowReceivables: () => void
   onDelete: (id: string) => void
   onCreate: (input: {
     name: string
@@ -45,9 +47,11 @@ interface ProjectListProps {
 export function ProjectList({
   projects,
   portfolio,
+  totalOutstanding,
   ledgerMonth,
   onMonthChange,
   onOpen,
+  onShowReceivables,
   onDelete,
   onCreate,
   onExportBackup,
@@ -84,10 +88,27 @@ export function ProjectList({
               </strong>
             </div>
             <div>
+              <span className="label">총 미수금</span>
+              <strong className={totalOutstanding > 0 ? 'warn-text' : 'profit'}>
+                {formatKRW(totalOutstanding)}
+              </strong>
+            </div>
+            <div>
               <span className="label">전체 프로젝트</span>
               <strong>{portfolio.count}</strong>
             </div>
           </div>
+          <button
+            type="button"
+            className="btn btn--ghost receivables-cta"
+            onClick={onShowReceivables}
+          >
+            <Banknote size={18} />
+            미수금 현황 보기
+            {totalOutstanding > 0 && (
+              <span className="badge badge--warn">{formatKRW(totalOutstanding)}</span>
+            )}
+          </button>
         </div>
       </header>
 

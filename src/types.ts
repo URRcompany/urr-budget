@@ -57,6 +57,9 @@ export interface LaborPayment {
 /** 예산 배분 프리셋 */
 export type BudgetPresetId = 'general' | 'cf' | 'mv' | 'docu'
 
+/** 홈 화면: 프로젝트 목록 / 미수금 현황 */
+export type PortfolioView = 'projects' | 'receivables'
+
 export interface Project {
   id: string
   name: string

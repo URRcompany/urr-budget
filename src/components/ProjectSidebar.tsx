@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { FolderPlus, Trash2 } from 'lucide-react'
+import { Banknote, FolderPlus, Trash2 } from 'lucide-react'
+import type { PortfolioView } from '../types'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
@@ -20,7 +21,11 @@ interface ProjectSidebarProps {
     spent: number
     netProfit: number
   }
+  portfolioView: PortfolioView
+  totalOutstanding: number
   onSelect: (id: string) => void
+  onShowReceivables: () => void
+  onShowProjects: () => void
   onDelete: (id: string) => void
   onCreate: (input: {
     name: string
@@ -40,7 +45,11 @@ export function ProjectSidebar({
   projects,
   activeProjectId,
   portfolio,
+  portfolioView,
+  totalOutstanding,
   onSelect,
+  onShowReceivables,
+  onShowProjects,
   onDelete,
   onCreate,
   onExportBackup,
@@ -68,8 +77,10 @@ export function ProjectSidebar({
             <strong>{formatCompactKRW(portfolio.revenue)}</strong>
           </div>
           <div>
-            <span>집행</span>
-            <strong>{formatCompactKRW(portfolio.spent)}</strong>
+            <span>미수금</span>
+            <strong className={totalOutstanding > 0 ? 'warn-text' : 'profit'}>
+              {formatCompactKRW(totalOutstanding)}
+            </strong>
           </div>
           <div>
             <span>프로젝트</span>
@@ -77,6 +88,20 @@ export function ProjectSidebar({
           </div>
         </div>
       </div>
+
+      <nav className="sidebar__nav" aria-label="메뉴">
+        <button
+          type="button"
+          className={`sidebar-nav-btn ${portfolioView === 'receivables' ? 'sidebar-nav-btn--active' : ''}`}
+          onClick={onShowReceivables}
+        >
+          <Banknote size={16} />
+          미수금 현황
+          {totalOutstanding > 0 && (
+            <span className="sidebar-nav-btn__badge">{formatCompactKRW(totalOutstanding)}</span>
+          )}
+        </button>
+      </nav>
 
       <div className="sidebar__actions">
         <button
@@ -135,6 +160,15 @@ export function ProjectSidebar({
       )}
 
       <nav className="sidebar__list" aria-label="프로젝트">
+        {portfolioView === 'receivables' && (
+          <button
+            type="button"
+            className="sidebar__back-projects muted"
+            onClick={onShowProjects}
+          >
+            ← 프로젝트 목록으로
+          </button>
+        )}
         {projects.length === 0 ? (
           <p className="sidebar__empty muted">프로젝트가 없습니다</p>
         ) : (

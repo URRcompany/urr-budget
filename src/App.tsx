@@ -1,14 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './hooks/useStore'
 import { useIsDesktop } from './hooks/useIsDesktop'
 import { ProjectList } from './components/ProjectList'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { ProjectDetailView } from './components/ProjectDetailView'
 import { WelcomePanel } from './components/WelcomePanel'
+import { ReceivablesDashboard } from './components/ReceivablesDashboard'
+import { getPortfolioReceivables } from './lib/receivables'
+import type { PortfolioView } from './types'
 import './App.css'
 
 function App() {
   const isDesktop = useIsDesktop()
+  const [portfolioView, setPortfolioView] = useState<PortfolioView>('projects')
   const {
     projects,
     activeProject,
@@ -49,10 +53,17 @@ function App() {
   } = useStore()
 
   useEffect(() => {
-    if (isDesktop && !activeProjectId && projects.length > 0) {
+    if (isDesktop && !activeProjectId && projects.length > 0 && portfolioView === 'projects') {
       openProject(projects[0].id)
     }
-  }, [isDesktop, activeProjectId, projects, openProject])
+  }, [isDesktop, activeProjectId, projects, openProject, portfolioView])
+
+  const receivables = getPortfolioReceivables(projects)
+
+  const openProjectFromReceivables = (id: string) => {
+    setPortfolioView('projects')
+    openProject(id)
+  }
 
   const detail =
     activeProject && projectStats ? (
@@ -131,22 +142,52 @@ function App() {
           projects={projects}
           activeProjectId={activeProjectId}
           portfolio={portfolio}
-          onSelect={openProject}
+          portfolioView={portfolioView}
+          totalOutstanding={receivables.totalOutstanding}
+          onSelect={(id) => {
+            setPortfolioView('projects')
+            openProject(id)
+          }}
+          onShowReceivables={() => {
+            closeProject()
+            setPortfolioView('receivables')
+          }}
+          onShowProjects={() => setPortfolioView('projects')}
           onDelete={deleteProject}
           onCreate={createProject}
           onExportBackup={exportBackup}
           onImportBackup={importBackup}
         />
         <div className="desktop-main">
-          {detail ?? (
-            <WelcomePanel
+          {portfolioView === 'receivables' ? (
+            <ReceivablesDashboard
               projects={projects}
-              ledgerMonth={ledgerMonth}
-              onMonthChange={setLedgerMonth}
-              onOpenProject={openProject}
+              onOpenProject={openProjectFromReceivables}
             />
+          ) : (
+            detail ?? (
+              <WelcomePanel
+                projects={projects}
+                ledgerMonth={ledgerMonth}
+                onMonthChange={setLedgerMonth}
+                onOpenProject={openProject}
+              />
+            )
           )}
         </div>
+      </div>
+    )
+  }
+
+  if (portfolioView === 'receivables') {
+    return (
+      <div className="app">
+        <ReceivablesDashboard
+          projects={projects}
+          showBack
+          onBack={() => setPortfolioView('projects')}
+          onOpenProject={openProjectFromReceivables}
+        />
       </div>
     )
   }
@@ -157,9 +198,11 @@ function App() {
         <ProjectList
           projects={projects}
           portfolio={portfolio}
+          totalOutstanding={receivables.totalOutstanding}
           ledgerMonth={ledgerMonth}
           onMonthChange={setLedgerMonth}
           onOpen={openProject}
+          onShowReceivables={() => setPortfolioView('receivables')}
           onDelete={deleteProject}
           onCreate={createProject}
           onExportBackup={exportBackup}
