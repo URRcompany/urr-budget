@@ -77,9 +77,9 @@ export function BudgetHero({
       <div className="hero__content">
         <div className="hero__nav">
           {showBack && (
-            <button type="button" className="btn btn--ghost btn--sm" onClick={onBack}>
+            <button type="button" className="btn btn--ghost btn--sm hero__back" onClick={onBack}>
               <ArrowLeft size={16} />
-              프로젝트 목록
+              ← 홈으로
             </button>
           )}
           <AppBrand size="sm" />

@@ -145,10 +145,10 @@ export function ProjectSidebar({
       />
 
       <nav className="sidebar__list" aria-label="프로젝트">
-        {portfolioView !== 'projects' && (
+        {(portfolioView !== 'projects' || activeProjectId) && (
           <button
             type="button"
-            className="sidebar__back-projects muted"
+            className="sidebar__back-projects"
             onClick={onShowProjects}
           >
             ← 홈으로

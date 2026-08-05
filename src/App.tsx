@@ -100,8 +100,8 @@ function App() {
         byCategory={projectStats.byCategory}
         filteredExpenses={projectStats.filteredExpenses}
         filter={filter}
-        showBack={!isDesktop}
-        onBack={closeProject}
+        showBack
+        onBack={goHome}
         onUpdateProject={(patch) => updateProject(activeProject.id, patch)}
         onUpdateCategoryPlanned={(id, planned) =>
           updateCategoryPlanned(activeProject.id, id, planned)
