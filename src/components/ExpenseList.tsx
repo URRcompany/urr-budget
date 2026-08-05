@@ -1,4 +1,5 @@
-import { FileText, Image, Link2, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, FileText, Image, Link2, Pencil, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import type { Category, Expense } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
@@ -10,6 +11,8 @@ interface ExpenseListProps {
   onEdit: (expense: Expense) => void
   onDelete: (id: string) => void
   onToggleInvoice?: (id: string, received: boolean) => void
+  /** 간단 목록 (기본) */
+  simple?: boolean
 }
 
 export function ExpenseList({
@@ -19,7 +22,10 @@ export function ExpenseList({
   onEdit,
   onDelete,
   onToggleInvoice,
+  simple = true,
 }: ExpenseListProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   if (expenses.length === 0) {
     return (
       <div className="empty">
@@ -30,12 +36,107 @@ export function ExpenseList({
   }
 
   return (
-    <ul className="expense-list">
+    <ul className={`expense-list ${simple ? 'expense-list--simple' : ''}`}>
       {expenses.map((e, i) => {
         const cat = categoryOf(e.categoryId)
         const isLinked = linkedExpenseIds?.has(e.id) ?? false
         const tax = resolveExpenseTax(e)
         const hasReceipt = Boolean(e.receiptDataUrl)
+        const expanded = expandedId === e.id
+
+        if (simple) {
+          return (
+            <li
+              key={e.id}
+              className={`expense-row expense-row--simple ${isLinked ? 'expense-row--linked' : ''}`}
+              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+            >
+              <span
+                className="expense-row__swatch"
+                style={{ background: cat?.color ?? '#888' }}
+                aria-hidden
+              />
+              <button
+                type="button"
+                className="expense-row__main expense-row__main--btn"
+                onClick={() => setExpandedId(expanded ? null : e.id)}
+                aria-expanded={expanded}
+              >
+                <div className="expense-row__title">
+                  {e.title}
+                  {isLinked && (
+                    <span className="link-badge expense-row__link-badge">
+                      <Link2 size={12} aria-hidden />
+                      인건비
+                    </span>
+                  )}
+                  {(e.invoiceReceived ?? false) === false && !isLinked && (
+                    <span className="badge badge--warn badge--xs">계산서</span>
+                  )}
+                </div>
+                <div className="expense-row__meta">
+                  <span>{cat?.name ?? '기타'}</span>
+                  <span aria-hidden>·</span>
+                  <span>{formatDate(e.date)}</span>
+                </div>
+                {expanded && (
+                  <div className="expense-row__detail">
+                    {e.vendor && <p className="muted">거래처: {e.vendor}</p>}
+                    {tax.vat > 0 ? (
+                      <p className="muted">
+                        공급 {formatKRW(tax.supply)} + VAT {formatKRW(tax.vat)}
+                      </p>
+                    ) : (
+                      <p className="muted">{vatModeLabel(tax.mode)}</p>
+                    )}
+                    {e.note && <p className="muted">{e.note}</p>}
+                    {isLinked && (
+                      <p className="muted">인건비 탭에서 수정·삭제하세요.</p>
+                    )}
+                  </div>
+                )}
+              </button>
+              <div className="expense-row__amount">{formatKRW(e.amount)}</div>
+              <div className="expense-row__actions">
+                {!isLinked && (
+                  <>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => onEdit(e)}
+                      aria-label="수정"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--danger"
+                      onClick={() => {
+                        if (confirm(`「${e.title}」 지출을 삭제할까요?`)) onDelete(e.id)
+                      }}
+                      aria-label="삭제"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setExpandedId(expanded ? null : e.id)}
+                  aria-label={expanded ? '접기' : '자세히'}
+                >
+                  <ChevronDown
+                    size={16}
+                    className={expanded ? 'icon-rotated' : ''}
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            </li>
+          )
+        }
+
         return (
           <li
             key={e.id}

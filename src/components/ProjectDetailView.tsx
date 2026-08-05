@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Download } from 'lucide-react'
 import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
 import { projectCashFlow } from '../types'
@@ -15,11 +15,10 @@ import { OverdueAlert } from './OverdueAlert'
 import { exportProjectCSV } from '../lib/export'
 import { exportQuotationPDF } from '../lib/quotation'
 
-type DetailTab = 'overview' | 'expenses' | 'payments' | 'ledger'
+type DetailTab = 'budget' | 'payments' | 'ledger'
 
 const TABS: { id: DetailTab; label: string }[] = [
-  { id: 'overview', label: '개요' },
-  { id: 'expenses', label: '지출' },
+  { id: 'budget', label: '예산·지출' },
   { id: 'payments', label: '입금·인건비' },
   { id: 'ledger', label: '장부' },
 ]
@@ -124,7 +123,7 @@ export function ProjectDetailView({
   onMonthChange,
   categoryOf,
 }: ProjectDetailViewProps) {
-  const [tab, setTab] = useState<DetailTab>('overview')
+  const [tab, setTab] = useState<DetailTab>('budget')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
 
@@ -172,29 +171,12 @@ export function ProjectDetailView({
       </nav>
 
       <main className="main main--tabbed">
-        {tab === 'overview' && (
+        {tab === 'budget' && (
           <div className="detail-tab-panel">
             <OverdueAlert projects={[project]} />
-            <div className="detail-export">
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={() => exportQuotationPDF(project)}
-              >
-                <Download size={15} />
-                견적서 PDF
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={() => exportProjectCSV(project)}
-              >
-                <Download size={15} />
-                프로젝트 CSV
-              </button>
-            </div>
 
             <ProfitSummary
+              compact
               revenue={project.revenue}
               spent={spent}
               netProfit={netProfit}
@@ -210,14 +192,31 @@ export function ProjectDetailView({
               cashNet={cashFlow.net}
             />
 
+            <div className="detail-export">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => exportQuotationPDF(project)}
+              >
+                <Download size={15} />
+                견적서 PDF
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => exportProjectCSV(project)}
+              >
+                <Download size={15} />
+                CSV
+              </button>
+            </div>
+
             <section className="section section--categories">
-              <header className="section__head">
-                <div>
-                  <h2>세부 비용 카테고리</h2>
-                  <p className="muted">항목별 배정 예산과 집행 현황</p>
-                </div>
+              <header className="section__head section__head--compact">
+                <h2>카테고리</h2>
               </header>
               <CategoryBreakdown
+                simple
                 totalBudget={project.totalBudget}
                 categories={byCategory}
                 budgetPreset={project.budgetPreset ?? 'general'}
@@ -232,20 +231,30 @@ export function ProjectDetailView({
                 onDeleteCategory={onDeleteCategory}
               />
             </section>
-          </div>
-        )}
 
-        {tab === 'expenses' && (
-          <div className="detail-tab-panel">
             <section className="section section--expenses">
               <header className="section__head">
                 <div>
-                  <h2>지출 내역</h2>
-                  <p className="muted">
-                    {filteredExpenses.length}건 · 발생 기준 집행 비용
-                  </p>
+                  <h2>지출</h2>
+                  <p className="muted">{filteredExpenses.length}건</p>
                 </div>
-                <div className="section__actions">
+                <div className="section__actions section__actions--wrap">
+                  <label className="filter-select">
+                    <span className="visually-hidden">카테고리 필터</span>
+                    <select
+                      value={filter}
+                      onChange={(e) =>
+                        onSetFilter(e.target.value as string | 'all')
+                      }
+                    >
+                      <option value="all">전체 카테고리</option>
+                      {project.categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     type="button"
                     className="btn btn--primary"
@@ -260,51 +269,8 @@ export function ProjectDetailView({
                 </div>
               </header>
 
-              <div className="expense-callout" role="note">
-                <p>
-                  <strong>인건비</strong>는{' '}
-                  <button
-                    type="button"
-                    className="expense-callout__link"
-                    onClick={() => setTab('payments')}
-                  >
-                    입금·인건비 탭
-                  </button>
-                  에서 등록하세요. 지급 완료 시 이 목록에 자동으로 나타납니다.
-                </p>
-              </div>
-
-              <div className="filters" role="tablist" aria-label="카테고리 필터">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={filter === 'all'}
-                  className={`chip ${filter === 'all' ? 'chip--active' : ''}`}
-                  onClick={() => onSetFilter('all')}
-                >
-                  전체
-                </button>
-                {project.categories.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={filter === c.id}
-                    className={`chip ${filter === c.id ? 'chip--active' : ''}`}
-                    style={
-                      filter === c.id
-                        ? ({ '--chip-accent': c.color } as CSSProperties)
-                        : undefined
-                    }
-                    onClick={() => onSetFilter(c.id)}
-                  >
-                    <span className="chip__dot" style={{ background: c.color }} />
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-
               <ExpenseList
+                simple
                 expenses={filteredExpenses}
                 categoryOf={categoryOf}
                 linkedExpenseIds={linkedExpenseIds}
@@ -315,6 +281,18 @@ export function ProjectDetailView({
                 onDelete={onDeleteExpense}
                 onToggleInvoice={onToggleExpenseInvoice}
               />
+
+              <p className="section-footnote muted">
+                인건비는{' '}
+                <button
+                  type="button"
+                  className="expense-callout__link"
+                  onClick={() => setTab('payments')}
+                >
+                  입금·인건비
+                </button>{' '}
+                탭에서 등록하세요.
+              </p>
             </section>
           </div>
         )}

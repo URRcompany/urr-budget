@@ -42,6 +42,7 @@ export function ExpenseForm({
     receiptFileName: '',
   })
   const [error, setError] = useState('')
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -76,6 +77,7 @@ export function ExpenseForm({
       })
     }
     setError('')
+    setShowDetails(Boolean(initial?.vendor || initial?.note || initial?.receiptDataUrl))
   }, [open, initial, categories])
 
   useEffect(() => {
@@ -172,66 +174,19 @@ export function ExpenseForm({
               autoFocus
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="지출 항목"
+              placeholder="예: 장비 대여, 식비"
             />
           </label>
 
           <label className="field">
-            <span>부가세</span>
-            <select
-              value={form.vatMode}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  vatMode: e.target.value as VatMode,
-                }))
-              }
-            >
-              <option value="included">포함 (합계 입력)</option>
-              <option value="separate">별도 (공급가 + VAT)</option>
-              <option value="exempt">면세</option>
-            </select>
+            <span>금액 (원, VAT 포함)</span>
+            <input
+              inputMode="numeric"
+              value={form.amount}
+              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              placeholder="0"
+            />
           </label>
-
-          {form.vatMode === 'separate' ? (
-            <div className="field-row">
-              <label className="field">
-                <span>공급가액 (원)</span>
-                <input
-                  inputMode="numeric"
-                  value={form.supplyAmount}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, supplyAmount: e.target.value }))
-                  }
-                  placeholder="0"
-                />
-              </label>
-              <label className="field">
-                <span>부가세 (10%)</span>
-                <input
-                  readOnly
-                  value={formatKRW(calcVatFromSupply(supplyNum))}
-                  className="field-readonly"
-                />
-              </label>
-            </div>
-          ) : (
-            <label className="field">
-              <span>{form.vatMode === 'exempt' ? '금액 (원)' : '합계 (원, VAT 포함)'}</span>
-              <input
-                inputMode="numeric"
-                value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="0"
-              />
-            </label>
-          )}
-
-          <div className="form-hint vat-preview" role="status">
-            {vatModeLabel(form.vatMode)} · 공급가 {formatKRW(previewTax.supply)}
-            {previewTax.vat > 0 && ` · VAT ${formatKRW(previewTax.vat)}`}
-            {' · '}합계 <strong>{formatKRW(previewTax.total)}</strong>
-          </div>
 
           <div className="field-row">
             <label className="field">
@@ -243,7 +198,7 @@ export function ExpenseForm({
               />
             </label>
             <label className="field">
-              <span>세부 카테고리</span>
+              <span>카테고리</span>
               <select
                 value={form.categoryId}
                 onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
@@ -257,75 +212,145 @@ export function ExpenseForm({
             </label>
           </div>
 
-          <label className="field">
-            <span>거래처</span>
-            <input
-              value={form.vendor}
-              onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
-              placeholder="선택 사항"
-            />
-          </label>
+          <button
+            type="button"
+            className="form-details-toggle"
+            onClick={() => setShowDetails((v) => !v)}
+            aria-expanded={showDetails}
+          >
+            {showDetails ? '세금·영수증 접기' : '세금·영수증 (선택)'}
+          </button>
 
-          <label className="field">
-            <span>메모</span>
-            <textarea
-              rows={2}
-              value={form.note}
-              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="선택 사항"
-            />
-          </label>
+          {showDetails && (
+            <div className="form-details">
+              <label className="field">
+                <span>부가세</span>
+                <select
+                  value={form.vatMode}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      vatMode: e.target.value as VatMode,
+                    }))
+                  }
+                >
+                  <option value="included">포함 (합계 입력)</option>
+                  <option value="separate">별도 (공급가 + VAT)</option>
+                  <option value="exempt">면세</option>
+                </select>
+              </label>
 
-          <div className="field">
-            <span>영수증·견적서 첨부</span>
-            {form.receiptDataUrl ? (
-              <div className="receipt-preview">
-                <img src={form.receiptDataUrl} alt="첨부 영수증" />
-                <div className="receipt-preview__meta">
-                  <span className="muted">{form.receiptFileName}</span>
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() =>
-                      setForm((f) => ({
-                        ...f,
-                        receiptDataUrl: '',
-                        receiptFileName: '',
-                      }))
-                    }
-                  >
-                    <Trash2 size={14} />
-                    삭제
-                  </button>
+              {form.vatMode === 'separate' ? (
+                <div className="field-row">
+                  <label className="field">
+                    <span>공급가액 (원)</span>
+                    <input
+                      inputMode="numeric"
+                      value={form.supplyAmount}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, supplyAmount: e.target.value }))
+                      }
+                      placeholder="0"
+                    />
+                  </label>
+                  <label className="field">
+                    <span>부가세 (10%)</span>
+                    <input
+                      readOnly
+                      value={formatKRW(calcVatFromSupply(supplyNum))}
+                      className="field-readonly"
+                    />
+                  </label>
                 </div>
+              ) : form.vatMode !== 'exempt' ? (
+                <label className="field">
+                  <span>합계 (원, VAT 포함)</span>
+                  <input
+                    inputMode="numeric"
+                    value={form.amount}
+                    onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                    placeholder="0"
+                  />
+                </label>
+              ) : null}
+
+              <div className="form-hint vat-preview" role="status">
+                {vatModeLabel(form.vatMode)} · 공급가 {formatKRW(previewTax.supply)}
+                {previewTax.vat > 0 && ` · VAT ${formatKRW(previewTax.vat)}`}
+                {' · '}합계 <strong>{formatKRW(previewTax.total)}</strong>
               </div>
-            ) : (
-              <label className="receipt-upload">
-                <ImagePlus size={18} />
-                <span>이미지 선택 (JPG, PNG)</span>
+
+              <label className="field">
+                <span>거래처</span>
                 <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    void handleReceipt(e.target.files?.[0] ?? null)
-                    e.target.value = ''
-                  }}
+                  value={form.vendor}
+                  onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
+                  placeholder="선택 사항"
                 />
               </label>
-            )}
-          </div>
 
-          <label className="field field--checkbox">
-            <input
-              type="checkbox"
-              checked={form.invoiceReceived}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, invoiceReceived: e.target.checked }))
-              }
-            />
-            <span>거래처 계산서·세금계산서 수령</span>
-          </label>
+              <label className="field">
+                <span>메모</span>
+                <textarea
+                  rows={2}
+                  value={form.note}
+                  onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+                  placeholder="선택 사항"
+                />
+              </label>
+
+              <div className="field">
+                <span>영수증·견적서 첨부</span>
+                {form.receiptDataUrl ? (
+                  <div className="receipt-preview">
+                    <img src={form.receiptDataUrl} alt="첨부 영수증" />
+                    <div className="receipt-preview__meta">
+                      <span className="muted">{form.receiptFileName}</span>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            receiptDataUrl: '',
+                            receiptFileName: '',
+                          }))
+                        }
+                      >
+                        <Trash2 size={14} />
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="receipt-upload">
+                    <ImagePlus size={18} />
+                    <span>이미지 선택 (JPG, PNG)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => {
+                        void handleReceipt(e.target.files?.[0] ?? null)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <label className="field field--checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.invoiceReceived}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, invoiceReceived: e.target.checked }))
+                  }
+                />
+                <span>거래처 계산서·세금계산서 수령</span>
+              </label>
+            </div>
+          )}
 
           {error && <p className="form-error">{error}</p>}
 

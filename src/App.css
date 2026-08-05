@@ -1648,6 +1648,226 @@ button {
   margin-bottom: 0.85rem;
 }
 
+.profit-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  border: 1px solid rgba(20, 24, 31, 0.08);
+}
+
+.profit-strip__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profit-strip__item .label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.profit-strip__item strong {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.profit-strip__item--loss strong {
+  color: var(--danger);
+}
+
+.profit-strip__item--warn strong {
+  color: var(--warn);
+}
+
+.category-block--simple {
+  margin-top: 0;
+}
+
+.category-block__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.category-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.category-simple-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: var(--surface-solid);
+  border: 1px solid rgba(20, 24, 31, 0.06);
+}
+
+.category-simple-row__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 0.35rem;
+  flex-shrink: 0;
+}
+
+.category-simple-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-simple-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: var(--text-sm);
+}
+
+.category-simple-row__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(20, 24, 31, 0.08);
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.category-simple-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.category-simple-row__meta {
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+.category-simple-row__edit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.inline-num--sm {
+  width: 5.5rem;
+  font-size: var(--text-sm);
+}
+
+.expense-list--simple .expense-row--simple {
+  align-items: center;
+}
+
+.expense-row__main--btn {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.expense-row__detail {
+  margin-top: 0.35rem;
+  font-size: var(--text-xs);
+}
+
+.expense-row__detail p {
+  margin: 0.15rem 0 0;
+}
+
+.badge--xs {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.35rem;
+}
+
+.filter-select select {
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(20, 24, 31, 0.12);
+  background: #fff;
+  font-size: var(--text-sm);
+}
+
+.section__head--compact {
+  margin-bottom: 0.5rem;
+}
+
+.section__head--compact h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.section__actions--wrap {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.section-footnote {
+  margin-top: 0.75rem;
+  font-size: var(--text-sm);
+}
+
+.form-details-toggle {
+  width: 100%;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--accent-deep);
+  background: rgba(196, 120, 42, 0.06);
+  border: 1px dashed rgba(196, 120, 42, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.form-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: rgba(20, 24, 31, 0.03);
+}
+
+.icon-rotated {
+  transform: rotate(180deg);
+}
+
+.btn--active {
+  background: rgba(196, 120, 42, 0.12);
+  color: var(--accent-deep);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .profit-hero--cash {
   background:
     linear-gradient(145deg, rgba(196, 120, 42, 0.1), rgba(255, 255, 255, 0.7)),
@@ -1828,6 +2048,10 @@ button {
   }
 
   .profit-facts--wide {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profit-strip {
     grid-template-columns: 1fr 1fr;
   }
 }
