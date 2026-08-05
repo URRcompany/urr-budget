@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { ArrowLeft, Settings2 } from 'lucide-react'
 import type { Project } from '../types'
 import { formatKRW } from '../lib/format'
+import { resolveProjectContract } from '../lib/contract'
+import { vatModeLabel, type VatMode } from '../lib/vat'
+import {
+  contractAmountLabel,
+  ContractAmountPreview,
+  getContractFormDefaults,
+  parseContractFormData,
+} from './ContractAmountFields'
 import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 
@@ -18,7 +26,17 @@ interface BudgetHeroProps {
   onBack: () => void
   onUpdate: (
     patch: Partial<
-      Pick<Project, 'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget'>
+      Pick<
+        Project,
+        | 'name'
+        | 'client'
+        | 'shootDate'
+        | 'revenue'
+        | 'totalBudget'
+        | 'contractVatMode'
+        | 'contractSupplyAmount'
+        | 'contractVatAmount'
+      >
     >,
   ) => void
 }
@@ -37,10 +55,21 @@ export function BudgetHero({
   onUpdate,
 }: BudgetHeroProps) {
   const [editing, setEditing] = useState(false)
+  const defaults = getContractFormDefaults(project)
+  const [vatMode, setVatMode] = useState<VatMode>(defaults.vatMode)
+  const [amount, setAmount] = useState(String(defaults.amount || ''))
+  const contract = resolveProjectContract(project)
   const over = remaining < 0
   const committedOver = committedRemaining < 0
   const pct = Math.round(usageRatio * 100)
   const committedPct = Math.round(committedUsageRatio * 100)
+
+  const openEdit = () => {
+    const d = getContractFormDefaults(project)
+    setVatMode(d.vatMode)
+    setAmount(String(d.amount || ''))
+    setEditing(true)
+  }
 
   return (
     <section className="hero hero--detail">
@@ -67,8 +96,7 @@ export function BudgetHero({
                 name: String(fd.get('name') || project.name),
                 client: String(fd.get('client') || ''),
                 shootDate: String(fd.get('shootDate') || ''),
-                revenue: Math.max(0, Number(fd.get('revenue')) || 0),
-                totalBudget: Math.max(0, Number(fd.get('totalBudget')) || 0),
+                ...parseContractFormData(fd),
               })
               setEditing(false)
             }}
@@ -86,27 +114,33 @@ export function BudgetHero({
               <input name="shootDate" type="date" defaultValue={project.shootDate} />
             </label>
             <label>
-              계약·매출 (원)
-              <input
-                name="revenue"
-                type="number"
-                min={0}
-                step={100000}
-                defaultValue={project.revenue}
-                required
-              />
+              부가세
+              <select
+                name="contractVatMode"
+                value={vatMode}
+                onChange={(e) => setVatMode(e.target.value as VatMode)}
+              >
+                <option value="separate">별도 (공급가 + VAT)</option>
+                <option value="included">포함 (합계)</option>
+                <option value="exempt">면세</option>
+              </select>
             </label>
             <label>
-              제작 예산 (원)
+              {contractAmountLabel(vatMode)}
               <input
-                name="totalBudget"
+                name="contractAmount"
                 type="number"
                 min={0}
                 step={100000}
-                defaultValue={project.totalBudget}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 required
               />
             </label>
+            <ContractAmountPreview
+              amount={Math.max(0, Number(amount) || 0)}
+              vatMode={vatMode}
+            />
             <div className="form-actions">
               <button
                 type="button"
@@ -139,14 +173,14 @@ export function BudgetHero({
 
             <div className="hero__budget hero__budget--triple">
               <div className="hero__figure">
-                <span className="label">계약·매출</span>
-                <strong>{formatKRW(project.revenue)}</strong>
-              </div>
-              <div className="hero__figure">
-                <span className="label">제작 예산</span>
-                <strong className="hero__figure--secondary">
-                  {formatKRW(project.totalBudget)}
-                </strong>
+                <span className="label">계약 금액 (합계)</span>
+                <strong>{formatKRW(contract.total)}</strong>
+                <p className="hero__vat-note muted">
+                  {vatModeLabel(contract.mode)}
+                  {contract.vat > 0
+                    ? ` · 공급 ${formatKRW(contract.supply)} + VAT ${formatKRW(contract.vat)}`
+                    : ` · 공급 ${formatKRW(contract.supply)}`}
+                </p>
               </div>
               <div className="hero__figure">
                 <span className="label">
@@ -160,7 +194,7 @@ export function BudgetHero({
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
-                onClick={() => setEditing(true)}
+                onClick={openEdit}
               >
                 <Settings2 size={16} />
                 프로젝트 설정

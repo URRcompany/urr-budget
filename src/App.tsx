@@ -50,6 +50,7 @@ function App() {
     deleteLaborPayment,
     toggleLaborPaymentPaid,
     applyClientPaymentTemplate,
+    applyAdvanceBalanceTemplate,
     exportBackup,
     importBackup,
     categoryOf,
@@ -143,6 +144,9 @@ function App() {
         }
         onApplyClientPaymentTemplate={() =>
           applyClientPaymentTemplate(activeProject.id, activeProject.revenue)
+        }
+        onApplyAdvanceBalanceTemplate={(advancePercent) =>
+          applyAdvanceBalanceTemplate(activeProject.id, activeProject.revenue, advancePercent)
         }
         allProjects={projects}
         ledgerMonth={ledgerMonth}

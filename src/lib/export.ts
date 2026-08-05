@@ -6,6 +6,7 @@ import {
 } from './ledger'
 import type { Project } from '../types'
 import { APP_NAME, COMPANY_NAME } from './brand'
+import { resolveProjectContract } from './contract'
 import { getOverduePayments } from './receivables'
 
 const exportLabel = `${COMPANY_NAME} ${APP_NAME}`
@@ -72,16 +73,19 @@ export function exportMonthlyLedgerCSV(
 
 /** 프로젝트 전체 요약 CSV */
 export function exportProjectCSV(project: Project) {
+  const contract = resolveProjectContract(project)
   const rows: (string | number)[][] = [
     [`${exportLabel} 프로젝트 내보내기`],
     ['프로젝트', project.name],
     ['클라이언트', project.client],
-    ['계약금액', project.revenue],
-    ['제작예산', project.totalBudget],
+    ['계약 합계', contract.total],
+    ['공급가', contract.supply],
+    ['부가세', contract.vat],
     [],
     ['[클라이언트 입금]'],
-    ['회차', '금액', '예정일', '입금일', '상태', '계산서발행', '발행일', '메모'],
+    ['구분', '회차', '금액', '예정일', '입금일', '상태', '계산서발행', '발행일', '메모'],
     ...project.clientPayments.map((cp) => [
+      cp.kind === 'advance' ? '선납' : cp.kind === 'balance' ? '잔금' : cp.kind === 'interim' ? '중도' : '기타',
       cp.label,
       cp.amount,
       cp.dueDate,

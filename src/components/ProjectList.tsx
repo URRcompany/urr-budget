@@ -38,8 +38,8 @@ interface ProjectListProps {
     name: string
     client: string
     shootDate: string
-    revenue: number
-    totalBudget: number
+    contractAmount: number
+    contractVatMode?: 'included' | 'separate' | 'exempt'
   }) => void
   onExportBackup: () => void
   onImportBackup: (

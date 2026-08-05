@@ -20,6 +20,7 @@ import {
 import { uid } from '../lib/format'
 import { monthKey } from '../lib/ledger'
 import { normalizeExpenseTaxFields } from '../lib/vat'
+import { normalizeProjectContractInput, syncProjectContractBudget } from '../lib/contract'
 import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
 const STORAGE_KEY = 'reelbudget.store.v3'
@@ -59,6 +60,7 @@ function normalizeClientPayment(
     paidDate: cp.paidDate ?? '',
     isPaid: cp.isPaid ?? false,
     note: cp.note ?? '',
+    kind: cp.kind ?? 'custom',
     invoiceIssued: cp.invoiceIssued ?? false,
     invoiceDate: cp.invoiceDate ?? '',
   }
@@ -66,7 +68,7 @@ function normalizeClientPayment(
 
 function normalizeProject(p: Partial<Project> & { name: string }): Project {
   const base = createEmptyProject()
-  return {
+  const merged = {
     ...base,
     ...p,
     categories: p.categories?.length ? p.categories : base.categories,
@@ -78,6 +80,8 @@ function normalizeProject(p: Partial<Project> & { name: string }): Project {
     ),
     laborPayments: p.laborPayments ?? [],
   }
+  const contract = syncProjectContractBudget(merged)
+  return { ...merged, ...contract }
 }
 
 function stripSampleProjects(store: AppStore): AppStore {
@@ -225,15 +229,18 @@ export function useStore() {
     name: string
     client: string
     shootDate: string
-    revenue: number
-    totalBudget: number
+    contractAmount: number
+    contractVatMode?: 'included' | 'separate' | 'exempt'
   }) => {
+    const contract = normalizeProjectContractInput({
+      amount: input.contractAmount,
+      vatMode: input.contractVatMode ?? 'separate',
+    })
     const project = createEmptyProject({
       name: input.name.trim() || '새 프로젝트',
       client: input.client.trim(),
       shootDate: input.shootDate,
-      revenue: Math.max(0, input.revenue),
-      totalBudget: Math.max(0, input.totalBudget),
+      ...contract,
     })
     setStore((s) => ({
       ...s,
@@ -267,12 +274,19 @@ export function useStore() {
           | 'revenue'
           | 'totalBudget'
           | 'budgetPreset'
+          | 'contractVatMode'
+          | 'contractSupplyAmount'
+          | 'contractVatAmount'
         >
       >,
     ) => {
       setStore((s) => ({
         ...s,
-        projects: s.projects.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        projects: s.projects.map((p) => {
+          if (p.id !== id) return p
+          const next = { ...p, ...patch }
+          return { ...next, ...syncProjectContractBudget(next) }
+        }),
       }))
     },
     [],
@@ -702,6 +716,48 @@ export function useStore() {
     return { ok: true as const, projectCount: imported.projects.length }
   }, [])
 
+  const applyAdvanceBalanceTemplate = useCallback(
+    (projectId: string, contractTotal: number, advancePercent = 50) => {
+      if (contractTotal <= 0) return
+      const pct = Math.min(100, Math.max(1, advancePercent))
+      const advanceAmount = Math.round(contractTotal * (pct / 100))
+      const balanceAmount = Math.max(0, contractTotal - advanceAmount)
+      const today = new Date().toISOString().slice(0, 10)
+      const items: Omit<ClientPayment, 'id'>[] = [
+        {
+          label: '선납금',
+          kind: 'advance',
+          amount: advanceAmount,
+          dueDate: today,
+          paidDate: '',
+          isPaid: false,
+          note: `${pct}%`,
+          invoiceIssued: false,
+          invoiceDate: '',
+        },
+        {
+          label: '잔금',
+          kind: 'balance',
+          amount: balanceAmount,
+          dueDate: '',
+          paidDate: '',
+          isPaid: false,
+          note: `${100 - pct}%`,
+          invoiceIssued: false,
+          invoiceDate: '',
+        },
+      ]
+      patchProject(projectId, (p) => ({
+        ...p,
+        clientPayments: [
+          ...items.map((item) => ({ ...item, id: uid() })),
+          ...p.clientPayments,
+        ],
+      }))
+    },
+    [patchProject],
+  )
+
   const applyClientPaymentTemplate = useCallback(
     (projectId: string, revenue: number) => {
       if (revenue <= 0) return
@@ -709,6 +765,7 @@ export function useStore() {
       const items: Omit<ClientPayment, 'id'>[] = [
         {
           label: '계약금',
+          kind: 'advance',
           amount: Math.round(revenue * 0.3),
           dueDate: today,
           paidDate: '',
@@ -719,6 +776,7 @@ export function useStore() {
         },
         {
           label: '중도금',
+          kind: 'interim',
           amount: Math.round(revenue * 0.4),
           dueDate: '',
           paidDate: '',
@@ -729,6 +787,7 @@ export function useStore() {
         },
         {
           label: '잔금',
+          kind: 'balance',
           amount: Math.max(0, revenue - Math.round(revenue * 0.3) - Math.round(revenue * 0.4)),
           dueDate: '',
           paidDate: '',
@@ -841,6 +900,7 @@ export function useStore() {
     deleteLaborPayment,
     toggleLaborPaymentPaid,
     applyClientPaymentTemplate,
+    applyAdvanceBalanceTemplate,
     exportBackup,
     importBackup,
     categoryOf,

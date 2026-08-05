@@ -50,7 +50,18 @@ interface ProjectDetailViewProps {
   onBack: () => void
   onUpdateProject: (
     patch: Partial<
-      Pick<Project, 'name' | 'client' | 'shootDate' | 'revenue' | 'totalBudget' | 'budgetPreset'>
+      Pick<
+        Project,
+        | 'name'
+        | 'client'
+        | 'shootDate'
+        | 'revenue'
+        | 'totalBudget'
+        | 'budgetPreset'
+        | 'contractVatMode'
+        | 'contractSupplyAmount'
+        | 'contractVatAmount'
+      >
     >,
   ) => void
   onUpdateCategoryPlanned: (id: string, planned: number) => void
@@ -73,6 +84,7 @@ interface ProjectDetailViewProps {
   onDeleteLaborPayment: (id: string) => void
   onToggleLaborPaymentPaid: (id: string, isPaid: boolean) => void
   onApplyClientPaymentTemplate: () => void
+  onApplyAdvanceBalanceTemplate: (advancePercent: number) => void
   allProjects: Project[]
   ledgerMonth: string
   onMonthChange: (month: string) => void
@@ -118,6 +130,7 @@ export function ProjectDetailView({
   onDeleteLaborPayment,
   onToggleLaborPaymentPaid,
   onApplyClientPaymentTemplate,
+  onApplyAdvanceBalanceTemplate,
   allProjects,
   ledgerMonth,
   onMonthChange,
@@ -310,6 +323,7 @@ export function ProjectDetailView({
               onTogglePaid={onToggleClientPaymentPaid}
               onToggleInvoice={onToggleClientPaymentInvoice}
               onApplyTemplate={onApplyClientPaymentTemplate}
+              onApplyAdvanceBalance={onApplyAdvanceBalanceTemplate}
             />
 
             <LaborPaymentsPanel

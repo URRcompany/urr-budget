@@ -26,6 +26,9 @@ export interface Expense {
   receiptFileName?: string
 }
 
+/** 클라이언트 입금 회차 (선납금·잔금·중도금 등) */
+export type ClientPaymentKind = 'advance' | 'balance' | 'interim' | 'custom'
+
 /** 클라이언트 입금 회차 (계약금·중도금·잔금 등) */
 export interface ClientPayment {
   id: string
@@ -35,6 +38,8 @@ export interface ClientPayment {
   paidDate: string
   isPaid: boolean
   note: string
+  /** 선납금 / 잔금 / 중도금 구분 */
+  kind?: ClientPaymentKind
   /** 클라이언트에게 세금계산서 발행 여부 */
   invoiceIssued?: boolean
   invoiceDate?: string
@@ -65,10 +70,14 @@ export interface Project {
   name: string
   client: string
   shootDate: string
-  /** 클라이언트 계약·매출 금액 */
+  /** 클라이언트 계약·매출 금액 (합계, VAT 포함 시) */
   revenue: number
-  /** 제작 예산 한도 */
+  /** 제작 예산 — revenue와 동일하게 유지 */
   totalBudget: number
+  /** 계약 금액 부가세 구분 (기본: 별도) */
+  contractVatMode?: 'included' | 'separate' | 'exempt'
+  contractSupplyAmount?: number
+  contractVatAmount?: number
   /** 예산 배분 프리셋 (CF/MV/다큐 등) */
   budgetPreset?: BudgetPresetId
   categories: Category[]
@@ -131,6 +140,9 @@ export function createEmptyProject(partial?: Partial<Project>): Project {
     shootDate: '',
     revenue: 0,
     totalBudget: 0,
+    contractVatMode: 'separate',
+    contractSupplyAmount: 0,
+    contractVatAmount: 0,
     budgetPreset: 'general',
     categories: createDefaultCategories(),
     expenses: [],
@@ -196,9 +208,24 @@ export function projectClientPaymentProgress(project: Project): {
   total: number
   pending: number
   allPaid: boolean
+  advancePaid: number
+  advanceTotal: number
+  balancePaid: number
+  balanceTotal: number
+  balanceOutstanding: number
 } {
   const total = project.clientPayments.reduce((s, p) => s + p.amount, 0)
   const paid = project.clientPayments
+    .filter((p) => p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  const advancePayments = project.clientPayments.filter((p) => p.kind === 'advance')
+  const balancePayments = project.clientPayments.filter((p) => p.kind === 'balance')
+  const advanceTotal = advancePayments.reduce((s, p) => s + p.amount, 0)
+  const advancePaid = advancePayments
+    .filter((p) => p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  const balanceTotal = balancePayments.reduce((s, p) => s + p.amount, 0)
+  const balancePaid = balancePayments
     .filter((p) => p.isPaid)
     .reduce((s, p) => s + p.amount, 0)
   return {
@@ -208,6 +235,11 @@ export function projectClientPaymentProgress(project: Project): {
     allPaid:
       project.clientPayments.length > 0 &&
       project.clientPayments.every((p) => p.isPaid),
+    advancePaid,
+    advanceTotal,
+    balancePaid,
+    balanceTotal,
+    balanceOutstanding: Math.max(balanceTotal - balancePaid, 0),
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
-import type { ClientPayment } from '../types'
+import type { ClientPayment, ClientPaymentKind } from '../types'
 import { formatKRW } from '../lib/format'
 
 interface ClientPaymentFormProps {
@@ -28,6 +28,7 @@ export function ClientPaymentForm({
     paidDate: '',
     isPaid: false,
     note: '',
+    kind: 'custom' as ClientPaymentKind,
     invoiceIssued: false,
     invoiceDate: '',
   })
@@ -43,6 +44,7 @@ export function ClientPaymentForm({
         paidDate: initial.paidDate,
         isPaid: initial.isPaid,
         note: initial.note,
+        kind: initial.kind ?? 'custom',
         invoiceIssued: initial.invoiceIssued ?? false,
         invoiceDate: initial.invoiceDate ?? '',
       })
@@ -54,6 +56,7 @@ export function ClientPaymentForm({
         paidDate: '',
         isPaid: false,
         note: '',
+        kind: 'custom',
         invoiceIssued: false,
         invoiceDate: '',
       })
@@ -106,6 +109,7 @@ export function ClientPaymentForm({
       paidDate: form.isPaid ? form.paidDate || new Date().toISOString().slice(0, 10) : '',
       isPaid: form.isPaid,
       note: form.note.trim(),
+      kind: form.kind,
       invoiceIssued: form.invoiceIssued,
       invoiceDate:
         form.invoiceIssued && form.isPaid
@@ -146,6 +150,38 @@ export function ClientPaymentForm({
               )}
             </div>
           )}
+
+          <label className="field">
+            <span>회차 구분</span>
+            <select
+              value={form.kind}
+              onChange={(e) => {
+                const kind = e.target.value as ClientPaymentKind
+                setForm((f) => ({
+                  ...f,
+                  kind,
+                  label:
+                    f.label.trim() === '' ||
+                    f.label === '선납금' ||
+                    f.label === '잔금' ||
+                    f.label === '중도금'
+                      ? kind === 'advance'
+                        ? '선납금'
+                        : kind === 'balance'
+                          ? '잔금'
+                          : kind === 'interim'
+                            ? '중도금'
+                            : f.label
+                      : f.label,
+                }))
+              }}
+            >
+              <option value="advance">선납금</option>
+              <option value="balance">잔금</option>
+              <option value="interim">중도금</option>
+              <option value="custom">기타</option>
+            </select>
+          </label>
 
           <label className="field">
             <span>회차명</span>

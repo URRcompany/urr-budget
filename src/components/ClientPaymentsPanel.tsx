@@ -17,6 +17,7 @@ interface ClientPaymentsPanelProps {
   onTogglePaid: (id: string, isPaid: boolean) => void
   onToggleInvoice: (id: string, issued: boolean) => void
   onApplyTemplate?: () => void
+  onApplyAdvanceBalance?: (advancePercent: number) => void
 }
 
 export function ClientPaymentsPanel({
@@ -30,6 +31,7 @@ export function ClientPaymentsPanel({
   onTogglePaid,
   onToggleInvoice,
   onApplyTemplate,
+  onApplyAdvanceBalance,
 }: ClientPaymentsPanelProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ClientPayment | null>(null)
@@ -39,6 +41,13 @@ export function ClientPaymentsPanel({
   const unissuedCount = payments.filter((p) => p.isPaid && !(p.invoiceIssued ?? false)).length
   const pct = revenue > 0 ? Math.round((received / revenue) * 100) : 0
   const allocation = clientPaymentsAllocation(revenue, payments)
+  const advancePaid = payments
+    .filter((p) => p.kind === 'advance' && p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  const balanceOutstanding = payments
+    .filter((p) => p.kind === 'balance' && !p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
+  const hasAdvanceBalance = payments.some((p) => p.kind === 'advance' || p.kind === 'balance')
 
   return (
     <section className="section payment-panel" aria-labelledby="client-pay-heading">
@@ -75,6 +84,30 @@ export function ClientPaymentsPanel({
           <Plus size={16} />
           입금 회차 추가
         </button>
+        {revenue > 0 && payments.length === 0 && onApplyAdvanceBalance && (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              const raw = prompt(
+                '선납금 비율을 입력하세요 (1–99, 기본 50).\n나머지는 잔금으로 자동 배정됩니다.',
+                '50',
+              )
+              if (raw == null) return
+              const pct = Number(raw)
+              if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) {
+                alert('1에서 99 사이 숫자를 입력해 주세요.')
+                return
+              }
+              if (confirm(`선납금 ${pct}% · 잔금 ${100 - pct}% 회차를 추가할까요?`)) {
+                onApplyAdvanceBalance(Math.round(pct))
+              }
+            }}
+          >
+            <Layers size={16} />
+            선납·잔금
+          </button>
+        )}
         {revenue > 0 && payments.length === 0 && onApplyTemplate && (
           <button
             type="button"
@@ -94,6 +127,20 @@ export function ClientPaymentsPanel({
           </button>
         )}
       </header>
+
+      {hasAdvanceBalance && (
+        <div className="advance-balance-banner" role="status">
+          <span>
+            선납금 입금 <strong className="profit">{formatKRW(advancePaid)}</strong>
+          </span>
+          <span>
+            잔금 미수{' '}
+            <strong className={balanceOutstanding > 0 ? 'warn-text' : 'profit'}>
+              {formatKRW(balanceOutstanding)}
+            </strong>
+          </span>
+        </div>
+      )}
 
       {revenue > 0 && payments.length > 0 && (
         <div
@@ -202,7 +249,15 @@ function PaymentRow({
         {payment.isPaid ? <Check size={16} /> : <Circle size={16} />}
       </button>
       <button type="button" className="payment-row__main" onClick={onEdit}>
-        <span className="payment-row__title">{payment.label}</span>
+        <span className="payment-row__title">
+          {payment.label}
+          {payment.kind === 'advance' && (
+            <span className="link-badge payment-row__kind">선납</span>
+          )}
+          {payment.kind === 'balance' && (
+            <span className="link-badge payment-row__kind">잔금</span>
+          )}
+        </span>
         <span className="payment-row__meta muted">
           {payment.dueDate && <>예정 {formatDate(payment.dueDate)} · </>}
           {overdue && (

@@ -1,15 +1,23 @@
+import { useState } from 'react'
+import { contractAmountLabel } from '../lib/contract'
+import { ContractAmountPreview } from './ContractAmountFields'
+import type { VatMode } from '../lib/vat'
+
 interface ProjectCreateFormProps {
   formId?: string
   onSubmit: (input: {
     name: string
     client: string
     shootDate: string
-    revenue: number
-    totalBudget: number
+    contractAmount: number
+    contractVatMode: VatMode
   }) => void
 }
 
 export function ProjectCreateForm({ formId, onSubmit }: ProjectCreateFormProps) {
+  const [vatMode, setVatMode] = useState<VatMode>('separate')
+  const [amount, setAmount] = useState('')
+
   return (
     <form
       id={formId}
@@ -21,8 +29,8 @@ export function ProjectCreateForm({ formId, onSubmit }: ProjectCreateFormProps) 
           name: String(fd.get('name') || ''),
           client: String(fd.get('client') || ''),
           shootDate: String(fd.get('shootDate') || ''),
-          revenue: Math.max(0, Number(fd.get('revenue')) || 0),
-          totalBudget: Math.max(0, Number(fd.get('totalBudget')) || 0),
+          contractAmount: Math.max(0, Number(fd.get('contractAmount')) || 0),
+          contractVatMode: (String(fd.get('contractVatMode') || 'separate') as VatMode) || 'separate',
         })
       }}
     >
@@ -38,16 +46,37 @@ export function ProjectCreateForm({ formId, onSubmit }: ProjectCreateFormProps) 
         <span>촬영일</span>
         <input name="shootDate" type="date" />
       </label>
-      <div className="field-row">
-        <label className="field">
-          <span>계약·매출 (원)</span>
-          <input name="revenue" type="number" min={0} step={100000} placeholder="0" />
-        </label>
-        <label className="field">
-          <span>제작 예산 (원)</span>
-          <input name="totalBudget" type="number" min={0} step={100000} placeholder="0" />
-        </label>
-      </div>
+
+      <label className="field">
+        <span>부가세</span>
+        <select
+          name="contractVatMode"
+          value={vatMode}
+          onChange={(e) => setVatMode(e.target.value as VatMode)}
+        >
+          <option value="separate">별도 (공급가 + VAT 10%) — 기본</option>
+          <option value="included">포함 (합계 입력)</option>
+          <option value="exempt">면세</option>
+        </select>
+      </label>
+
+      <label className="field">
+        <span>{contractAmountLabel(vatMode)}</span>
+        <input
+          name="contractAmount"
+          type="number"
+          min={0}
+          step={100000}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+        />
+      </label>
+
+      <ContractAmountPreview
+        amount={Math.max(0, Number(amount) || 0)}
+        vatMode={vatMode}
+      />
     </form>
   )
 }
