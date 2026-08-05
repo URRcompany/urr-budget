@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { useStore } from './hooks/useStore'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useStore, normalizeImportedStore } from './hooks/useStore'
+import { useCloudSync } from './hooks/useCloudSync'
+import { CloudSyncProvider } from './context/CloudSyncContext'
 import { useIsDesktop } from './hooks/useIsDesktop'
 import { ProjectList } from './components/ProjectList'
 import { ProjectSidebar } from './components/ProjectSidebar'
@@ -17,6 +19,8 @@ function App() {
   const [portfolioView, setPortfolioView] = useState<PortfolioView>('projects')
   const initialDesktopOpenDone = useRef(false)
   const {
+    store,
+    replaceStore,
     projects,
     activeProject,
     activeProjectId,
@@ -55,6 +59,12 @@ function App() {
     importBackup,
     categoryOf,
   } = useStore()
+
+  const cloudSync = useCloudSync({
+    store,
+    setStore: replaceStore,
+    normalizeStore: normalizeImportedStore,
+  })
 
   useEffect(() => {
     if (
@@ -155,8 +165,10 @@ function App() {
       />
     ) : null
 
+  let content: ReactNode
+
   if (isDesktop) {
-    return (
+    content = (
       <div className="desktop-app">
         <ProjectSidebar
           projects={projects}
@@ -211,10 +223,8 @@ function App() {
         </div>
       </div>
     )
-  }
-
-  if (portfolioView === 'receivables') {
-    return (
+  } else if (portfolioView === 'receivables') {
+    content = (
       <div className="app">
         <ReceivablesDashboard
           projects={projects}
@@ -224,10 +234,8 @@ function App() {
         />
       </div>
     )
-  }
-
-  if (portfolioView === 'tax') {
-    return (
+  } else if (portfolioView === 'tax') {
+    content = (
       <div className="app">
         <TaxInvoiceDashboard
           projects={projects}
@@ -237,10 +245,8 @@ function App() {
         />
       </div>
     )
-  }
-
-  if (!activeProject || !projectStats) {
-    return (
+  } else if (!activeProject || !projectStats) {
+    content = (
       <div className="app">
         <ProjectList
           projects={projects}
@@ -259,9 +265,13 @@ function App() {
         />
       </div>
     )
+  } else {
+    content = <div className="app">{detail}</div>
   }
 
-  return <div className="app">{detail}</div>
+  return (
+    <CloudSyncProvider value={cloudSync}>{content}</CloudSyncProvider>
+  )
 }
 
 export default App

@@ -17,6 +17,11 @@ import {
   type AuthSession,
   type AuthUser,
 } from '../lib/auth'
+import {
+  isCloudSyncConfigured,
+  linkGoogleCredential,
+  signOutFirebase,
+} from '../lib/firebase'
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -24,9 +29,11 @@ interface AuthContextValue {
   clientId: string
   allowedConfigured: boolean
   error: string | null
+  syncCredential: string | null
   signInWithCredential: (credential: string) => void
   signOut: () => void
   clearError: () => void
+  clearSyncCredential: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -35,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [syncCredential, setSyncCredential] = useState<string | null>(null)
 
   const clientId = getGoogleClientId()
   const allowedConfigured = getAllowedEmails().length > 0
@@ -45,26 +53,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false)
   }, [])
 
+  const clearSyncCredential = useCallback(() => setSyncCredential(null), [])
+
   const signInWithCredential = useCallback((credential: string) => {
-    try {
-      const verified = verifyGoogleCredential(credential)
-      const session: AuthSession = saveAuthSession(verified)
-      setUser(session)
-      setError(null)
-      // Electron: OAuth 팝업 닫힌 뒤 메인 창이 하얗게 되는 경우 방지
-      if (window.electronAPI?.isDesktop) {
-        window.location.reload()
+    void (async () => {
+      try {
+        const verified = verifyGoogleCredential(credential)
+        const session: AuthSession = saveAuthSession(verified)
+        setUser(session)
+        setError(null)
+
+        if (isCloudSyncConfigured()) {
+          setSyncCredential(credential)
+          try {
+            await linkGoogleCredential(credential)
+            setSyncCredential(null)
+          } catch {
+            /* useCloudSync에서 재시도 */
+          }
+        }
+
+        // Electron: OAuth 팝업 닫힌 뒤 메인 창이 하얗게 되는 경우 방지
+        if (window.electronAPI?.isDesktop) {
+          window.location.reload()
+        }
+      } catch (err) {
+        clearAuthSession()
+        setUser(null)
+        setSyncCredential(null)
+        setError(err instanceof Error ? err.message : '로그인에 실패했습니다.')
       }
-    } catch (err) {
-      clearAuthSession()
-      setUser(null)
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.')
-    }
+    })()
   }, [])
 
   const signOut = useCallback(() => {
+    void signOutFirebase()
     clearAuthSession()
     setUser(null)
+    setSyncCredential(null)
     setError(null)
   }, [])
 
@@ -77,9 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clientId,
       allowedConfigured,
       error,
+      syncCredential,
       signInWithCredential,
       signOut,
       clearError,
+      clearSyncCredential,
     }),
     [
       user,
@@ -87,9 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clientId,
       allowedConfigured,
       error,
+      syncCredential,
       signInWithCredential,
       signOut,
       clearError,
+      clearSyncCredential,
     ],
   )
 

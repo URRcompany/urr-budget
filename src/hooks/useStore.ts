@@ -93,7 +93,7 @@ function stripSampleProjects(store: AppStore): AppStore {
   return { ...store, projects, activeProjectId }
 }
 
-function normalizeImportedStore(raw: AppStore): AppStore {
+export function normalizeImportedStore(raw: AppStore): AppStore {
   return stripSampleProjects({
     version: 3,
     projects: raw.projects.map((p) => normalizeProject(p)),
@@ -866,7 +866,13 @@ export function useStore() {
     [activeProject],
   )
 
+  const replaceStore = useCallback((next: AppStore) => {
+    setStore(normalizeImportedStore(next))
+  }, [])
+
   return {
+    store,
+    replaceStore,
     projects: store.projects,
     activeProject,
     activeProjectId: store.activeProjectId,
