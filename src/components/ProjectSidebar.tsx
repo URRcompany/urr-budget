@@ -11,6 +11,7 @@ import {
 import { formatCompactKRW, formatKRW } from '../lib/format'
 import { BackupControls } from './BackupControls'
 import { UserBar } from './UserBar'
+import { ProjectCreateModal } from './ProjectCreateModal'
 
 interface ProjectSidebarProps {
   projects: Project[]
@@ -107,7 +108,7 @@ export function ProjectSidebar({
         <button
           type="button"
           className="btn btn--primary btn--block"
-          onClick={() => setCreating((v) => !v)}
+          onClick={() => setCreating(true)}
         >
           <FolderPlus size={16} />
           새 프로젝트
@@ -119,45 +120,11 @@ export function ProjectSidebar({
         />
       </div>
 
-      {creating && (
-        <form
-          className="sidebar__create"
-          onSubmit={(e) => {
-            e.preventDefault()
-            const fd = new FormData(e.currentTarget)
-            onCreate({
-              name: String(fd.get('name') || ''),
-              client: String(fd.get('client') || ''),
-              shootDate: String(fd.get('shootDate') || ''),
-              revenue: Math.max(0, Number(fd.get('revenue')) || 0),
-              totalBudget: Math.max(0, Number(fd.get('totalBudget')) || 0),
-            })
-            setCreating(false)
-          }}
-        >
-          <input name="name" required placeholder="프로젝트명" autoFocus />
-          <input name="client" placeholder="클라이언트" />
-          <div className="sidebar__create-row">
-            <input name="revenue" type="number" min={0} step={100000} placeholder="계약액" />
-            <input
-              name="totalBudget"
-              type="number"
-              min={0}
-              step={100000}
-              placeholder="예산"
-            />
-          </div>
-          <input name="shootDate" type="date" />
-          <div className="form-actions">
-            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCreating(false)}>
-              취소
-            </button>
-            <button type="submit" className="btn btn--primary btn--sm">
-              만들기
-            </button>
-          </div>
-        </form>
-      )}
+      <ProjectCreateModal
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSubmit={onCreate}
+      />
 
       <nav className="sidebar__list" aria-label="프로젝트">
         {portfolioView === 'receivables' && (

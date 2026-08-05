@@ -11,6 +11,7 @@ import {
 import { formatDate, formatKRW } from '../lib/format'
 import { BackupControls } from './BackupControls'
 import { UserBar } from './UserBar'
+import { ProjectCreateForm } from './ProjectCreateForm'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { LedgerTimeline } from './LedgerTimeline'
@@ -142,13 +143,23 @@ export function ProjectList({
         </header>
 
         {creating && (
-          <ProjectCreateForm
-            onCancel={() => setCreating(false)}
-            onSubmit={(data) => {
-              onCreate(data)
-              setCreating(false)
-            }}
-          />
+          <div className="create-form">
+            <ProjectCreateForm
+              formId="project-create-mobile"
+              onSubmit={(data) => {
+                onCreate(data)
+                setCreating(false)
+              }}
+            />
+            <div className="form-actions">
+              <button type="button" className="btn btn--ghost" onClick={() => setCreating(false)}>
+                취소
+              </button>
+              <button type="submit" form="project-create-mobile" className="btn btn--primary">
+                만들기
+              </button>
+            </div>
+          </div>
         )}
 
         {projects.length === 0 ? (
@@ -247,75 +258,5 @@ export function ProjectList({
         )}
       </section>
     </div>
-  )
-}
-
-function ProjectCreateForm({
-  onCancel,
-  onSubmit,
-}: {
-  onCancel: () => void
-  onSubmit: (input: {
-    name: string
-    client: string
-    shootDate: string
-    revenue: number
-    totalBudget: number
-  }) => void
-}) {
-  return (
-    <form
-      className="create-form"
-      onSubmit={(e) => {
-        e.preventDefault()
-        const fd = new FormData(e.currentTarget)
-        onSubmit({
-          name: String(fd.get('name') || ''),
-          client: String(fd.get('client') || ''),
-          shootDate: String(fd.get('shootDate') || ''),
-          revenue: Math.max(0, Number(fd.get('revenue')) || 0),
-          totalBudget: Math.max(0, Number(fd.get('totalBudget')) || 0),
-        })
-      }}
-    >
-      <div className="field-row field-row--3">
-        <label className="field">
-          <span>프로젝트명</span>
-          <input name="name" required placeholder="프로젝트명" autoFocus />
-        </label>
-        <label className="field">
-          <span>클라이언트</span>
-          <input name="client" placeholder="선택 사항" />
-        </label>
-        <label className="field">
-          <span>촬영일</span>
-          <input name="shootDate" type="date" />
-        </label>
-      </div>
-      <div className="field-row">
-        <label className="field">
-          <span>계약·매출 (원)</span>
-          <input name="revenue" type="number" min={0} step={100000} placeholder="0" />
-        </label>
-        <label className="field">
-          <span>제작 예산 (원)</span>
-          <input
-            name="totalBudget"
-            type="number"
-            min={0}
-            step={100000}
-            placeholder="0"
-          />
-        </label>
-      </div>
-      <div className="form-actions">
-        <button type="button" className="btn btn--ghost" onClick={onCancel}>
-          취소
-        </button>
-        <button type="submit" className="btn btn--primary">
-          만들기
-        </button>
-      </div>
-    </form>
   )
 }
