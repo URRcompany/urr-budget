@@ -1,4 +1,19 @@
 {
+<<<<<<< HEAD
   "install": "ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm install",
   "start": "npm run dev"
+=======
+  "name": "ReelBudget",
+  "install": "ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci && { [ -f .env ] || cp .env.example .env; }",
+  "terminals": [
+    {
+      "name": "vite-dev",
+      "command": "npm run dev -- --host",
+      "description": "Vite dev server for the ReelBudget web SPA (http://localhost:5173)."
+    }
+  ],
+  "ports": [
+    { "name": "vite dev server", "port": 5173 }
+  ]
+>>>>>>> acd2c4c3c6198be9572d1dc75fbf6571dc1e8ea9
 }
