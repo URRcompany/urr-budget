@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import {
   isCloudSyncConfigured,
   linkGoogleCredential,
-  waitForFirebaseUser,
   watchFirebaseUser,
 } from '../lib/firebase'
+import type { User } from 'firebase/auth'
 import {
   pushCloudStore,
   resolveInitialStore,
@@ -62,31 +62,28 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
     let unsubRemote: (() => void) | null = null
     let cancelled = false
 
-    const setup = async () => {
-      setStatus('syncing')
-      try {
-        const fbUser = await waitForFirebaseUser()
-        if (cancelled || !fbUser) {
-          setStatus('idle')
-          return
-        }
+    // Firebase 로그인이 아직 진행 중일 수 있으므로 동기화 준비 상태로 표시한다.
+    setStatus('syncing')
 
-        uidRef.current = fbUser.uid
+    const startForUser = async (fbUser: User) => {
+      uidRef.current = fbUser.uid
 
-        if (!initialSyncDoneRef.current) {
-          const { store: resolved, source } = await resolveInitialStore(
-            fbUser.uid,
-            store,
-          )
-          if (cancelled) return
-          applyingRemoteRef.current = true
-          setStore(normalizeStore(resolved))
-          applyingRemoteRef.current = false
-          initialSyncDoneRef.current = true
-          setLastSyncedAt(Date.now())
-          setStatus(source === 'empty' ? 'idle' : 'synced')
-        }
+      if (!initialSyncDoneRef.current) {
+        setStatus('syncing')
+        const { store: resolved, source } = await resolveInitialStore(
+          fbUser.uid,
+          store,
+        )
+        if (cancelled) return
+        applyingRemoteRef.current = true
+        setStore(normalizeStore(resolved))
+        applyingRemoteRef.current = false
+        initialSyncDoneRef.current = true
+        setLastSyncedAt(Date.now())
+        setStatus(source === 'empty' ? 'idle' : 'synced')
+      }
 
+      if (!unsubRemote && !cancelled) {
         unsubRemote = subscribeCloudStore(
           fbUser.uid,
           (remote) => {
@@ -100,20 +97,27 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
           },
           () => setStatus('error'),
         )
-      } catch {
-        if (!cancelled) setStatus('error')
       }
     }
 
-    void setup()
-
+    // 이벤트 기반 처리: Firebase 인증 상태가 준비되는 즉시(신규 로그인 후
+    // linkGoogleCredential 완료 시점이든, 저장된 세션 복원 시점이든) 동기화를
+    // 시작한다. 기존의 일회성 waitForFirebaseUser는 로그인 네트워크 왕복이 느린
+    // 모바일에서 첫 콜백(null)에 먼저 resolve 되어 동기화가 아예 실행되지 않는
+    // 레이스가 있었다.
     const unsubAuth = watchFirebaseUser((fbUser) => {
-      if (!fbUser) {
+      if (cancelled) return
+      if (fbUser) {
+        void startForUser(fbUser).catch(() => {
+          if (!cancelled) setStatus('error')
+        })
+      } else {
         initialSyncDoneRef.current = false
         uidRef.current = null
         unsubRemote?.()
         unsubRemote = null
-        setStatus('idle')
+        // 아직 Firebase 로그인이 완료되지 않은 상태. 동기화 대기로 표시한다.
+        setStatus('syncing')
       }
     })
 
