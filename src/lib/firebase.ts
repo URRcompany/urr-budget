@@ -7,9 +7,10 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, type Firestore } from 'firebase/firestore'
 
 let app: FirebaseApp | null = null
+let db: Firestore | null = null
 
 export function isCloudSyncConfigured(): boolean {
   return Boolean(
@@ -37,7 +38,15 @@ export function getFirebaseAuth() {
 }
 
 export function getFirestoreDb() {
-  return getFirestore(getFirebaseApp())
+  if (!db) {
+    // 모바일/셀룰러 네트워크나 일부 프록시 환경에서 Firestore 기본 WebChannel
+    // 스트리밍이 막혀 동기화(onSnapshot/getDoc)가 멈추는 문제를 방지하기 위해
+    // 롱폴링 자동 감지를 활성화한다.
+    db = initializeFirestore(getFirebaseApp(), {
+      experimentalAutoDetectLongPolling: true,
+    })
+  }
+  return db
 }
 
 /** Google Identity Services JWT → Firebase Auth (클라우드 동기화용) */
