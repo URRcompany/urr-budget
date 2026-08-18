@@ -31,6 +31,10 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
   const applyingRemoteRef = useRef(false)
   const initialSyncDoneRef = useRef(false)
   const uidRef = useRef<string | null>(null)
+  // 초기/원격 적용으로 store가 바뀐 경우엔 다시 업로드하지 않기 위한 플래그
+  const skipNextUploadRef = useRef(false)
+  // 우리가 방금 올린 쓰기의 updatedAt. onSnapshot 에코를 걸러 무한 루프 방지.
+  const lastPushedUpdatedAtRef = useRef(0)
 
   // GIS 로그인 직후 Firebase Auth 연결
   useEffect(() => {
@@ -76,6 +80,7 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
         )
         if (cancelled) return
         applyingRemoteRef.current = true
+        skipNextUploadRef.current = true
         setStore(normalizeStore(resolved))
         applyingRemoteRef.current = false
         initialSyncDoneRef.current = true
@@ -88,7 +93,10 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
           fbUser.uid,
           (remote) => {
             if (applyingRemoteRef.current) return
+            // 우리가 방금 올린 쓰기가 되돌아온 에코는 무시한다(무한 루프 방지).
+            if (remote.updatedAt === lastPushedUpdatedAtRef.current) return
             applyingRemoteRef.current = true
+            skipNextUploadRef.current = true
             setStore(normalizeStore(toAppStore(remote)))
             setLocalSyncMeta(remote.updatedAt)
             applyingRemoteRef.current = false
@@ -116,8 +124,8 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
         uidRef.current = null
         unsubRemote?.()
         unsubRemote = null
-        // 아직 Firebase 로그인이 완료되지 않은 상태. 동기화 대기로 표시한다.
-        setStatus('syncing')
+        // 아직 Firebase 로그인이 안 된 상태(세션 만료 등). 무한 스피너 대신 대기 표시.
+        setStatus('idle')
       }
     })
 
@@ -132,13 +140,21 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
   // 로컬 변경 → 클라우드 업로드 (debounce)
   useEffect(() => {
     const uid = uidRef.current
-    if (!uid || !initialSyncDoneRef.current || applyingRemoteRef.current) return
+    if (!uid || !initialSyncDoneRef.current) return
     if (!isCloudSyncConfigured()) return
+
+    // 초기 동기화/원격 수신으로 인해 store가 바뀐 경우는 업로드하지 않는다.
+    // (이걸 올리면 onSnapshot 에코 → 재업로드가 반복되는 무한 루프가 생긴다.)
+    if (skipNextUploadRef.current) {
+      skipNextUploadRef.current = false
+      return
+    }
 
     setStatus('syncing')
     const timer = window.setTimeout(() => {
       void pushCloudStore(uid, store)
         .then((ts) => {
+          lastPushedUpdatedAtRef.current = ts
           setLastSyncedAt(ts)
           setStatus('synced')
         })
