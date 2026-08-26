@@ -3264,6 +3264,11 @@ button {
   background: rgba(179, 58, 43, 0.1);
 }
 
+.sync-badge--needs_reauth {
+  color: var(--danger);
+  background: rgba(179, 58, 43, 0.1);
+}
+
 .sync-badge .spin {
   animation: sync-spin 0.9s linear infinite;
 }
@@ -3290,6 +3295,11 @@ button {
 }
 
 .sidebar .sync-badge--error {
+  color: #f0a8a0;
+  background: rgba(179, 58, 43, 0.2);
+}
+
+.sidebar .sync-badge--needs_reauth {
   color: #f0a8a0;
   background: rgba(179, 58, 43, 0.2);
 }

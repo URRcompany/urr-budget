@@ -5,12 +5,15 @@ import {
   signInWithCredential,
   signOut,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   type User,
 } from 'firebase/auth'
 import { initializeFirestore, type Firestore } from 'firebase/firestore'
 
 let app: FirebaseApp | null = null
 let db: Firestore | null = null
+let persistenceReady: Promise<void> | null = null
 
 export function isCloudSyncConfigured(): boolean {
   return Boolean(
@@ -34,7 +37,14 @@ function getFirebaseApp(): FirebaseApp {
 }
 
 export function getFirebaseAuth() {
-  return getAuth(getFirebaseApp())
+  const auth = getAuth(getFirebaseApp())
+  // IndexedDB 로컬 지속성 — 새로고침/Electron 재시작 후에도 Firebase 세션 유지
+  if (!persistenceReady) {
+    persistenceReady = setPersistence(auth, browserLocalPersistence).catch(() => {
+      /* 일부 환경(file:// 등)에서 실패할 수 있음 — 기본값으로 계속 */
+    })
+  }
+  return auth
 }
 
 export function getFirestoreDb() {
@@ -51,8 +61,10 @@ export function getFirestoreDb() {
 
 /** Google Identity Services JWT → Firebase Auth (클라우드 동기화용) */
 export async function linkGoogleCredential(googleIdToken: string): Promise<User> {
+  const auth = getFirebaseAuth()
+  await persistenceReady
   const credential = GoogleAuthProvider.credential(googleIdToken)
-  const result = await signInWithCredential(getFirebaseAuth(), credential)
+  const result = await signInWithCredential(auth, credential)
   return result.user
 }
 

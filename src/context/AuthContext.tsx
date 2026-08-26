@@ -63,18 +63,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session)
         setError(null)
 
+        let firebaseLinked = !isCloudSyncConfigured()
         if (isCloudSyncConfigured()) {
           setSyncCredential(credential)
           try {
             await linkGoogleCredential(credential)
             setSyncCredential(null)
+            firebaseLinked = true
           } catch {
-            /* useCloudSync에서 재시도 */
+            /* useCloudSync에서 syncCredential로 재시도 — 실패 시 Electron reload 금지 */
+            firebaseLinked = false
           }
         }
 
-        // Electron: OAuth 팝업 닫힌 뒤 메인 창이 하얗게 되는 경우 방지
-        if (window.electronAPI?.isDesktop) {
+        // Electron: OAuth 팝업 닫힌 뒤 메인 창이 하얗게 되는 경우 방지.
+        // Firebase 링크가 끝나기 전에 reload하면 syncCredential이 사라지고
+        // 클라우드 동기화가 '대기'에 영구 고착된다.
+        if (window.electronAPI?.isDesktop && firebaseLinked) {
           window.location.reload()
         }
       } catch (err) {
