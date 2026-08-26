@@ -7,13 +7,23 @@ import {
   onAuthStateChanged,
   setPersistence,
   browserLocalPersistence,
+  connectAuthEmulator,
   type User,
 } from 'firebase/auth'
-import { initializeFirestore, type Firestore } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  connectFirestoreEmulator,
+  type Firestore,
+} from 'firebase/firestore'
 
 let app: FirebaseApp | null = null
 let db: Firestore | null = null
 let persistenceReady: Promise<void> | null = null
+let emulatorsConnected = false
+
+function shouldUseEmulators(): boolean {
+  return import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
+}
 
 export function isCloudSyncConfigured(): boolean {
   return Boolean(
@@ -36,7 +46,20 @@ function getFirebaseApp(): FirebaseApp {
   return app
 }
 
+function connectEmulatorsIfNeeded() {
+  if (emulatorsConnected || !shouldUseEmulators()) return
+  const auth = getAuth(getFirebaseApp())
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+  const firestore = initializeFirestore(getFirebaseApp(), {
+    experimentalAutoDetectLongPolling: true,
+  })
+  connectFirestoreEmulator(firestore, '127.0.0.1', 8080)
+  db = firestore
+  emulatorsConnected = true
+}
+
 export function getFirebaseAuth() {
+  connectEmulatorsIfNeeded()
   const auth = getAuth(getFirebaseApp())
   // IndexedDB 로컬 지속성 — 새로고침/Electron 재시작 후에도 Firebase 세션 유지
   if (!persistenceReady) {
@@ -48,6 +71,7 @@ export function getFirebaseAuth() {
 }
 
 export function getFirestoreDb() {
+  connectEmulatorsIfNeeded()
   if (!db) {
     // 모바일/셀룰러 네트워크나 일부 프록시 환경에서 Firestore 기본 WebChannel
     // 스트리밍이 막혀 동기화(onSnapshot/getDoc)가 멈추는 문제를 방지하기 위해
