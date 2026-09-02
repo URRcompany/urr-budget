@@ -79,7 +79,7 @@ export function BudgetHero({
           {showBack && (
             <button type="button" className="btn btn--ghost btn--sm hero__back" onClick={onBack}>
               <ArrowLeft size={16} />
-              ← 홈으로
+              ← 홈
             </button>
           )}
           <AppBrand size="sm" />

@@ -48,7 +48,9 @@ export function MonthlyLedger({
           <h2 id="ledger-month-heading">
             {projectName ? `${projectName} · ` : ''}월별 장부
           </h2>
-          <p className="muted">실입금(매출) − 지출·인건비(매입) = 순이익</p>
+          {!compact && (
+            <p className="muted">실입금(매출) − 지출·인건비(매입) = 순이익</p>
+          )}
         </div>
         <div className="ledger-month__actions">
           <div className="ledger-month__nav">
@@ -97,52 +99,59 @@ export function MonthlyLedger({
         <article className="ledger-kpi__card ledger-kpi__card--sales">
           <span className="label">매출</span>
           <strong>{formatKRW(stats.sales)}</strong>
-          <p>클라이언트 실입금 {stats.incomeCount}건</p>
+          {!compact && <p>클라이언트 실입금 {stats.incomeCount}건</p>}
         </article>
         <article className="ledger-kpi__card ledger-kpi__card--purchase">
           <span className="label">매입</span>
           <strong>{formatKRW(stats.purchases)}</strong>
-          <p>
-            지출 {formatCompactKRW(breakdown.expenses)}
-            {breakdown.labor > 0 && ` · 인건비 ${formatCompactKRW(breakdown.labor)}`}
-          </p>
+          {!compact && (
+            <p>
+              지출 {formatCompactKRW(breakdown.expenses)}
+              {breakdown.labor > 0 && ` · 인건비 ${formatCompactKRW(breakdown.labor)}`}
+            </p>
+          )}
         </article>
         <article
           className={`ledger-kpi__card ledger-kpi__card--net ${stats.net >= 0 ? '' : 'ledger-kpi__card--loss'}`}
         >
           <span className="label">순이익</span>
           <strong>
-            {stats.net >= 0 ? (
+            {!compact && stats.net >= 0 ? (
               <TrendingUp size={20} aria-hidden />
-            ) : (
+            ) : !compact ? (
               <TrendingDown size={20} aria-hidden />
-            )}
+            ) : null}
             {formatKRW(stats.net)}
           </strong>
-          <p>{stats.net >= 0 ? '흑字' : '적자'} · {stats.expenseCount}건 지출</p>
+          {!compact && (
+            <p>{stats.net >= 0 ? '흑字' : '적자'} · {stats.expenseCount}건 지출</p>
+          )}
         </article>
-      </div>
-
-      <div className="ledger-bars" aria-hidden>
-        <div className="ledger-bar-row">
-          <span>매출</span>
-          <div className="ledger-bar-track">
-            <div className="ledger-bar-fill ledger-bar-fill--sales" style={{ width: `${salesPct}%` }} />
-          </div>
-        </div>
-        <div className="ledger-bar-row">
-          <span>매입</span>
-          <div className="ledger-bar-track">
-            <div
-              className="ledger-bar-fill ledger-bar-fill--purchase"
-              style={{ width: `${purchasePct}%` }}
-            />
-          </div>
-        </div>
       </div>
 
       {!compact && (
         <>
+          <div className="ledger-bars" aria-hidden>
+            <div className="ledger-bar-row">
+              <span>매출</span>
+              <div className="ledger-bar-track">
+                <div
+                  className="ledger-bar-fill ledger-bar-fill--sales"
+                  style={{ width: `${salesPct}%` }}
+                />
+              </div>
+            </div>
+            <div className="ledger-bar-row">
+              <span>매입</span>
+              <div className="ledger-bar-track">
+                <div
+                  className="ledger-bar-fill ledger-bar-fill--purchase"
+                  style={{ width: `${purchasePct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="ledger-month-pills" role="tablist" aria-label="월 선택">
             {available.slice(0, 8).map((m) => (
               <button
