@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, Loader2, AlertCircle, LogOut } from 'lucide-react'
+import { Cloud, CloudOff, Loader2, AlertCircle, LogOut, RefreshCw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCloudSyncStatus } from '../context/CloudSyncContext'
 
@@ -7,7 +7,7 @@ interface UserBarProps {
 }
 
 function SyncIndicator({ compact }: { compact: boolean }) {
-  const { status, enabled } = useCloudSyncStatus()
+  const { status, enabled, errorMessage } = useCloudSyncStatus()
   if (!enabled) return null
 
   const labels: Record<string, string> = {
@@ -15,22 +15,30 @@ function SyncIndicator({ compact }: { compact: boolean }) {
     syncing: '동기화 중…',
     synced: '동기화됨',
     error: '동기화 오류',
+    needs_reauth: '재로그인 필요',
   }
 
   const Icon =
     status === 'syncing'
       ? Loader2
-      : status === 'error'
-        ? AlertCircle
+      : status === 'error' || status === 'needs_reauth'
+        ? status === 'needs_reauth'
+          ? RefreshCw
+          : AlertCircle
         : status === 'synced'
           ? Cloud
           : CloudOff
 
+  const title =
+    errorMessage && (status === 'error' || status === 'needs_reauth')
+      ? errorMessage
+      : (labels[status] ?? '동기화')
+
   return (
     <span
       className={`sync-badge sync-badge--${status}${compact ? ' sync-badge--compact' : ''}`}
-      title={labels[status] ?? '동기화'}
-      aria-label={labels[status] ?? '동기화'}
+      title={title}
+      aria-label={title}
     >
       <Icon size={compact ? 13 : 14} className={status === 'syncing' ? 'spin' : undefined} />
       {!compact && <span>{labels[status]}</span>}

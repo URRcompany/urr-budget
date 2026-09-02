@@ -4,12 +4,14 @@ import type { SyncStatus } from '../lib/cloudSync'
 export interface CloudSyncContextValue {
   status: SyncStatus
   lastSyncedAt: number | null
+  errorMessage: string | null
   enabled: boolean
 }
 
 const CloudSyncContext = createContext<CloudSyncContextValue>({
   status: 'off',
   lastSyncedAt: null,
+  errorMessage: null,
   enabled: false,
 })
 
