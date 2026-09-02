@@ -3130,6 +3130,10 @@ button {
 }
 
 .backup-controls--compact .backup-controls__actions {
+  flex-direction: row;
+}
+
+.sidebar .backup-controls--compact .backup-controls__actions {
   flex-direction: column;
 }
 
@@ -3950,6 +3954,10 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.sidebar .user-bar--minimal .user-bar__name--compact {
   color: rgba(244, 241, 234, 0.85);
 }
 
@@ -3961,6 +3969,36 @@ button {
 .welcome-panel--simple {
   padding: 1.25rem;
   max-width: 900px;
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.home-summary--desktop {
+  margin-bottom: 0;
+}
+
+.section__head--home {
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.section__actions--home {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.home--simple .section__head--home h2 {
+  flex: 1;
+  min-width: 0;
+}
+
+.home--simple .backup-controls--compact {
+  flex-shrink: 0;
 }
 
 .welcome-panel--simple .welcome-panel__empty {
@@ -3984,6 +4022,20 @@ button {
 @media (min-width: 1024px) {
   .home--simple {
     max-width: none;
+    padding: 0;
+  }
+
+  .welcome-panel--simple {
+    padding: 1.5rem 2rem 2rem;
+    max-width: none;
+    place-content: start;
+  }
+
+  .desktop-main .welcome-panel {
+    display: flex;
+    place-content: start;
+    min-height: auto;
+    text-align: left;
     padding: 0;
   }
 }

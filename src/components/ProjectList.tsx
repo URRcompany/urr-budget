@@ -12,7 +12,6 @@ import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 import { BackupControls } from './BackupControls'
 import { ProjectCreateModal } from './ProjectCreateModal'
-import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
 import { OverdueAlert } from './OverdueAlert'
 
@@ -62,7 +61,6 @@ export function ProjectList({
   onImportBackup,
 }: ProjectListProps) {
   const [creating, setCreating] = useState(false)
-  const thisMonth = getMonthStats(projects, monthKey())
 
   return (
     <div className="home home--simple">
@@ -73,9 +71,9 @@ export function ProjectList({
 
       <section className="home-summary" aria-label="요약">
         <div className="home-summary__main">
-          <span className="label">이번 달 순이익</span>
-          <strong className={thisMonth.net >= 0 ? 'profit' : 'danger'}>
-            {formatKRW(thisMonth.net)}
+          <span className="label">전체 순수익</span>
+          <strong className={portfolio.netProfit >= 0 ? 'profit' : 'danger'}>
+            {formatKRW(portfolio.netProfit)}
           </strong>
         </div>
         <div className="home-summary__row">
@@ -116,9 +114,9 @@ export function ProjectList({
       </section>
 
       <section className="section">
-        <header className="section__head section__head--tight">
+        <header className="section__head section__head--tight section__head--home">
           <h2>프로젝트</h2>
-          <div className="section__actions">
+          <div className="section__actions section__actions--home">
             <BackupControls compact onExport={onExportBackup} onImport={onImportBackup} />
             <button
               type="button"
