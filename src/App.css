@@ -964,6 +964,76 @@ button {
   gap: 0.45rem;
 }
 
+.payment-bulk {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(42, 111, 124, 0.35);
+  background: rgba(42, 111, 124, 0.05);
+}
+
+.payment-bulk__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.payment-bulk__head h3 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.payment-bulk__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.payment-bulk__item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.payment-bulk__item:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.payment-bulk__item input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.payment-bulk__label {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--weight-medium);
+}
+
+.payment-bulk__due {
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.payment-bulk__amount {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
 .payment-row {
   display: grid;
   grid-template-columns: auto 1fr auto auto auto auto;
