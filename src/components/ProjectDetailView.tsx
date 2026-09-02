@@ -1,16 +1,13 @@
 import { useState, useMemo } from 'react'
 import { Plus, Download } from 'lucide-react'
 import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
-import { projectCashFlow } from '../types'
 import { BudgetHero } from './BudgetHero'
-import { ProfitSummary } from './ProfitSummary'
 import { ClientPaymentsPanel } from './ClientPaymentsPanel'
 import { LaborPaymentsPanel } from './LaborPaymentsPanel'
 import { CategoryBreakdown } from './CategoryBreakdown'
 import { ExpenseList } from './ExpenseList'
 import { ExpenseForm } from './ExpenseForm'
 import { MonthlyLedger } from './MonthlyLedger'
-import { LedgerTimeline } from './LedgerTimeline'
 import { OverdueAlert } from './OverdueAlert'
 import { exportProjectCSV } from '../lib/export'
 import { exportQuotationPDF } from '../lib/quotation'
@@ -18,7 +15,7 @@ import { exportQuotationPDF } from '../lib/quotation'
 type DetailTab = 'budget' | 'payments' | 'ledger'
 
 const TABS: { id: DetailTab; label: string }[] = [
-  { id: 'budget', label: '예산·지출' },
+  { id: 'budget', label: '예산' },
   { id: 'payments', label: '입금·인건비' },
   { id: 'ledger', label: '장부' },
 ]
@@ -100,7 +97,7 @@ export function ProjectDetailView({
   usageRatio,
   committedUsageRatio,
   netProfit,
-  margin,
+  margin: _margin,
   received,
   outstanding,
   laborStats,
@@ -139,8 +136,6 @@ export function ProjectDetailView({
   const [tab, setTab] = useState<DetailTab>('budget')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
-
-  const cashFlow = projectCashFlow(project)
 
   const linkedExpenseIds = useMemo(
     () =>
@@ -187,23 +182,6 @@ export function ProjectDetailView({
         {tab === 'budget' && (
           <div className="detail-tab-panel">
             <OverdueAlert projects={[project]} />
-
-            <ProfitSummary
-              compact
-              revenue={project.revenue}
-              spent={spent}
-              netProfit={netProfit}
-              margin={margin}
-              budget={project.totalBudget}
-              remaining={remaining}
-              committedRemaining={committedRemaining}
-              unpaidLabor={unpaidLabor}
-              received={received}
-              outstanding={outstanding}
-              cashInflow={cashFlow.inflow}
-              cashOutflow={cashFlow.outflow}
-              cashNet={cashFlow.net}
-            />
 
             <div className="detail-export">
               <button
@@ -341,16 +319,12 @@ export function ProjectDetailView({
           <div className="detail-tab-panel">
             <section className="section section--ledger-main">
               <MonthlyLedger
+                compact
                 projects={allProjects}
                 month={ledgerMonth}
                 projectId={project.id}
                 projectName={project.name}
                 onMonthChange={onMonthChange}
-              />
-              <LedgerTimeline
-                projects={allProjects}
-                month={ledgerMonth}
-                projectId={project.id}
               />
             </section>
           </div>

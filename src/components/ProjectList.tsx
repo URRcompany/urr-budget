@@ -1,21 +1,19 @@
 import { useState } from 'react'
-import { Banknote, FileText, FolderPlus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { Banknote, FileText, FolderPlus, Trash2 } from 'lucide-react'
 import {
   projectClientPaymentProgress,
   projectLaborStats,
-  projectMargin,
   projectNetProfit,
   projectSpent,
   type Project,
 } from '../types'
-import { formatDate, formatKRW } from '../lib/format'
+import { formatCompactKRW, formatKRW } from '../lib/format'
 import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 import { BackupControls } from './BackupControls'
 import { ProjectCreateModal } from './ProjectCreateModal'
 import { getMonthStats, monthKey } from '../lib/ledger'
 import { MonthlyLedger } from './MonthlyLedger'
-import { LedgerTimeline } from './LedgerTimeline'
 import { OverdueAlert } from './OverdueAlert'
 
 interface ProjectListProps {
@@ -67,179 +65,113 @@ export function ProjectList({
   const thisMonth = getMonthStats(projects, monthKey())
 
   return (
-    <div className="home">
-      <header className="home-hero">
-        <div className="home-hero__atmosphere" aria-hidden />
-        <div className="home-hero__content">
-          <AppBrand />
-          <UserBar compact />
-          <h1 className="home-hero__title">영상제작 프로젝트 예산</h1>
-          <p className="home-hero__sub">
-            월별 매출·매입 장부로 이번 달 수익을 바로 확인하세요.
-          </p>
-
-          <div className="portfolio-strip portfolio-strip--ledger">
-            <div>
-              <span className="label">이번 달 매출</span>
-              <strong className="profit">{formatKRW(thisMonth.sales)}</strong>
-            </div>
-            <div>
-              <span className="label">이번 달 매입</span>
-              <strong>{formatKRW(thisMonth.purchases)}</strong>
-            </div>
-            <div>
-              <span className="label">이번 달 순이익</span>
-              <strong className={thisMonth.net >= 0 ? 'profit' : 'danger'}>
-                {formatKRW(thisMonth.net)}
-              </strong>
-            </div>
-            <div>
-              <span className="label">총 미수금</span>
-              <strong className={totalOutstanding > 0 ? 'warn-text' : 'profit'}>
-                {formatKRW(totalOutstanding)}
-              </strong>
-            </div>
-            <div>
-              <span className="label">전체 프로젝트</span>
-              <strong>{portfolio.count}</strong>
-            </div>
-          </div>
-          <div className="home-hero__portfolio-actions">
-            <button
-              type="button"
-              className="btn btn--ghost receivables-cta"
-              onClick={onShowReceivables}
-            >
-              <Banknote size={18} />
-              미수금
-              {totalOutstanding > 0 && (
-                <span className="badge badge--warn">{formatKRW(totalOutstanding)}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost receivables-cta"
-              onClick={onShowTax}
-            >
-              <FileText size={18} />
-              세금·계산서
-              {taxAttentionCount > 0 && (
-                <span className="badge badge--warn">{taxAttentionCount}건 확인</span>
-              )}
-            </button>
-          </div>
-        </div>
+    <div className="home home--simple">
+      <header className="home-top">
+        <AppBrand />
+        <UserBar compact />
       </header>
 
-      <section className="section section--ledger">
+      <section className="home-summary" aria-label="요약">
+        <div className="home-summary__main">
+          <span className="label">이번 달 순이익</span>
+          <strong className={thisMonth.net >= 0 ? 'profit' : 'danger'}>
+            {formatKRW(thisMonth.net)}
+          </strong>
+        </div>
+        <div className="home-summary__row">
+          <div>
+            <span className="label">미수금</span>
+            <strong className={totalOutstanding > 0 ? 'warn-text' : undefined}>
+              {formatCompactKRW(totalOutstanding)}
+            </strong>
+          </div>
+          <div>
+            <span className="label">프로젝트</span>
+            <strong>{portfolio.count}</strong>
+          </div>
+        </div>
+        <div className="home-summary__links">
+          <button type="button" className="home-link" onClick={onShowReceivables}>
+            <Banknote size={15} />
+            미수금
+          </button>
+          <button type="button" className="home-link" onClick={onShowTax}>
+            <FileText size={15} />
+            세금
+            {taxAttentionCount > 0 && (
+              <span className="home-link__dot" aria-label={`${taxAttentionCount}건`} />
+            )}
+          </button>
+        </div>
+      </section>
+
+      <section className="section section--ledger section--compact">
         <OverdueAlert projects={projects} onOpenProject={onOpen} />
         <MonthlyLedger
+          compact
           projects={projects}
           month={ledgerMonth}
           onMonthChange={onMonthChange}
         />
-        <LedgerTimeline projects={projects} month={ledgerMonth} />
       </section>
 
       <section className="section">
-        <header className="section__head">
-          <div>
-            <h2>프로젝트</h2>
-            <p className="muted">카드를 눌러 예산·지출을 관리합니다</p>
-          </div>
+        <header className="section__head section__head--tight">
+          <h2>프로젝트</h2>
           <div className="section__actions">
-            <BackupControls onExport={onExportBackup} onImport={onImportBackup} />
+            <BackupControls compact onExport={onExportBackup} onImport={onImportBackup} />
             <button
               type="button"
-              className="btn btn--primary"
+              className="btn btn--primary btn--sm"
               onClick={() => setCreating(true)}
             >
-              <FolderPlus size={18} />
+              <FolderPlus size={16} />
               새 프로젝트
             </button>
           </div>
         </header>
 
         {projects.length === 0 ? (
-          <div className="empty">
+          <div className="empty empty--simple">
             <p>프로젝트가 없습니다.</p>
-            <p className="muted">새 프로젝트를 만들어 예산을 시작해 보세요.</p>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => setCreating(true)}
+            >
+              <FolderPlus size={16} />
+              첫 프로젝트 만들기
+            </button>
           </div>
         ) : (
-          <ul className="project-grid">
-            {projects.map((p, i) => {
+          <ul className="project-list">
+            {projects.map((p) => {
               const spent = projectSpent(p)
               const net = projectNetProfit(p)
-              const margin = projectMargin(p)
               const clientPay = projectClientPaymentProgress(p)
               const labor = projectLaborStats(p)
-              const budgetPct =
-                p.totalBudget > 0
-                  ? Math.min(Math.round((spent / p.totalBudget) * 100), 999)
-                  : 0
+              const hasAlert =
+                (!clientPay.allPaid && p.clientPayments.length > 0) || labor.unpaidCount > 0
               return (
-                <li
-                  key={p.id}
-                  className="project-card"
-                  style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}
-                >
+                <li key={p.id} className="project-row">
                   <button
                     type="button"
-                    className="project-card__body"
+                    className="project-row__body"
                     onClick={() => onOpen(p.id)}
                   >
-                    <div className="project-card__top">
-                      <h3>{p.name}</h3>
-                      {p.client && <p className="muted">{p.client}</p>}
+                    <div className="project-row__text">
+                      <strong>{p.name}</strong>
+                      {p.client && <span className="muted">{p.client}</span>}
                     </div>
-                    <dl className="project-card__stats">
-                      <div>
-                        <dt>계약</dt>
-                        <dd>{formatKRW(p.revenue)}</dd>
-                      </div>
-                      <div>
-                        <dt>집행</dt>
-                        <dd>{formatKRW(spent)}</dd>
-                      </div>
-                      <div>
-                        <dt>순수익</dt>
-                        <dd className={net >= 0 ? 'profit' : 'danger'}>
-                          {net >= 0 ? (
-                            <TrendingUp size={14} aria-hidden />
-                          ) : (
-                            <TrendingDown size={14} aria-hidden />
-                          )}
-                          {formatKRW(net)}
-                        </dd>
-                      </div>
-                    </dl>
-                    <div className="project-card__foot">
-                      <span className="muted">
-                        {p.shootDate ? formatDate(p.shootDate) : '촬영일 미정'}
-                      </span>
-                      <span className="project-card__flags">
-                        {!clientPay.allPaid && p.clientPayments.length > 0 && (
-                          <span className="badge badge--warn">미수</span>
-                        )}
-                        {labor.unpaidCount > 0 && (
-                          <span className="badge badge--warn">
-                            미지급 {labor.unpaidCount}
-                          </span>
-                        )}
-                        {clientPay.allPaid && p.clientPayments.length > 0 && (
-                          <span className="badge badge--ok">입금완료</span>
-                        )}
-                      </span>
-                      <span className="muted">
-                        예산 {budgetPct}%
-                        {margin != null &&
-                          ` · 마진 ${Math.round(margin * 100)}%`}
-                      </span>
+                    <div className="project-row__meta">
+                      <span className={net >= 0 ? 'profit' : 'danger'}>{formatKRW(net)}</span>
+                      <span className="muted">집행 {formatCompactKRW(spent)}</span>
+                      {hasAlert && <span className="project-row__alert" aria-hidden />}
                     </div>
                   </button>
                   <button
                     type="button"
-                    className="icon-btn icon-btn--danger project-card__delete"
+                    className="icon-btn icon-btn--danger project-row__delete"
                     aria-label={`${p.name} 삭제`}
                     onClick={() => {
                       if (confirm(`「${p.name}」 프로젝트를 삭제할까요?`)) {
@@ -247,7 +179,7 @@ export function ProjectList({
                       }
                     }}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 </li>
               )

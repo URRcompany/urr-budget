@@ -50,34 +50,39 @@ export function UserBar({ compact = false }: UserBarProps) {
   const { user, signOut } = useAuth()
   if (!user) return null
 
+  const displayName = user.name || user.email.split('@')[0]
+
   return (
-    <div className={`user-bar ${compact ? 'user-bar--compact' : ''}`}>
+    <div className={`user-bar ${compact ? 'user-bar--compact user-bar--minimal' : ''}`}>
       {user.picture ? (
         <img
           className="user-bar__avatar"
           src={user.picture}
           alt=""
-          width={compact ? 28 : 32}
-          height={compact ? 28 : 32}
+          width={compact ? 26 : 32}
+          height={compact ? 26 : 32}
         />
       ) : (
         <span className="user-bar__avatar user-bar__avatar--fallback" aria-hidden>
-          {(user.name || user.email).slice(0, 1)}
+          {displayName.slice(0, 1)}
         </span>
       )}
-      <div className="user-bar__info">
-        <strong className="user-bar__name">{user.name || user.email}</strong>
-        {!compact && <span className="user-bar__email muted">{user.email}</span>}
-      </div>
+      {!compact && (
+        <div className="user-bar__info">
+          <strong className="user-bar__name">{displayName}</strong>
+          <span className="user-bar__email muted">{user.email}</span>
+        </div>
+      )}
+      {compact && <span className="user-bar__name user-bar__name--compact">{displayName}</span>}
       <SyncIndicator compact={compact} />
       <button
         type="button"
         className="btn btn--ghost btn--sm user-bar__logout"
         onClick={signOut}
         title="로그아웃"
+        aria-label="로그아웃"
       >
         <LogOut size={15} />
-        {!compact && '로그아웃'}
       </button>
     </div>
   )

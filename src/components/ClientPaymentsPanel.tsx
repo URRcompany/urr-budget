@@ -176,6 +176,48 @@ export function ClientPaymentsPanel({
         </div>
       </div>
 
+      {payments.length > 0 && pendingCount > 0 && (
+        <div className="payment-bulk" aria-labelledby="payment-bulk-heading">
+          <div className="payment-bulk__head">
+            <h3 id="payment-bulk-heading">빠른 입금 완료</h3>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => {
+                for (const p of payments) {
+                  if (!p.isPaid) onTogglePaid(p.id, true)
+                }
+              }}
+            >
+              <Check size={15} />
+              모두 완료
+            </button>
+          </div>
+          <ul className="payment-bulk__list">
+            {payments
+              .filter((p) => !p.isPaid)
+              .map((p) => (
+                <li key={p.id}>
+                  <label className="payment-bulk__item">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => onTogglePaid(p.id, true)}
+                    />
+                    <span className="payment-bulk__label">{p.label}</span>
+                    {p.dueDate && (
+                      <span className="payment-bulk__due muted">
+                        {formatDate(p.dueDate)}
+                      </span>
+                    )}
+                    <span className="payment-bulk__amount">{formatKRW(p.amount)}</span>
+                  </label>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
       {payments.length === 0 ? (
         <div className="empty empty--compact">
           <p>입금 회차가 없습니다.</p>
