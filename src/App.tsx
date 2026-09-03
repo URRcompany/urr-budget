@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useStore, normalizeImportedStore } from './hooks/useStore'
 import { useCloudSync } from './hooks/useCloudSync'
 import { CloudSyncProvider } from './context/CloudSyncContext'
@@ -17,7 +17,6 @@ import './App.css'
 function App() {
   const isDesktop = useIsDesktop()
   const [portfolioView, setPortfolioView] = useState<PortfolioView>('projects')
-  const initialDesktopOpenDone = useRef(false)
   const {
     store,
     replaceStore,
@@ -65,19 +64,6 @@ function App() {
     setStore: replaceStore,
     normalizeStore: normalizeImportedStore,
   })
-
-  useEffect(() => {
-    if (
-      isDesktop &&
-      !initialDesktopOpenDone.current &&
-      !activeProjectId &&
-      projects.length > 0 &&
-      portfolioView === 'projects'
-    ) {
-      initialDesktopOpenDone.current = true
-      openProject(projects[0].id)
-    }
-  }, [isDesktop, activeProjectId, projects, openProject, portfolioView])
 
   const receivables = getPortfolioReceivables(projects)
   const taxSummary = getPortfolioTaxSummary(projects)
@@ -214,9 +200,20 @@ function App() {
             detail ?? (
               <WelcomePanel
                 projects={projects}
+                portfolio={portfolio}
+                totalOutstanding={receivables.totalOutstanding}
+                taxAttentionCount={taxSummary.attentionCount}
                 ledgerMonth={ledgerMonth}
                 onMonthChange={setLedgerMonth}
                 onOpenProject={openProject}
+                onShowReceivables={() => {
+                  closeProject()
+                  setPortfolioView('receivables')
+                }}
+                onShowTax={() => {
+                  closeProject()
+                  setPortfolioView('tax')
+                }}
               />
             )
           )}
