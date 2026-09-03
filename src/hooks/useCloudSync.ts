@@ -14,6 +14,9 @@ import {
   setLocalSyncMeta,
   toAppStore,
   mergePreservingLocalReceipts,
+  mergeStoresByProjectId,
+  projectIdsEqual,
+  markLocalDirty,
   type SyncStatus,
 } from '../lib/cloudSync'
 
@@ -48,6 +51,8 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
   const storeRef = useRef(store)
   const syncCredentialRef = useRef(syncCredential)
   const reauthTimerRef = useRef<number | null>(null)
+  // 마운트 직후 첫 store 이펙트는 localStorage 로드일 뿐이라 dirty로 표시하지 않음
+  const storeBootstrappedRef = useRef(false)
 
   storeRef.current = store
   syncCredentialRef.current = syncCredential
@@ -127,8 +132,10 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
             if (remote.updatedAt === lastPushedUpdatedAtRef.current) return
             applyingRemoteRef.current = true
             skipUploadsRef.current += 1
+            const remoteStore = toAppStore(remote)
+            // 원격 내용을 우선하되, 아직 클라우드에 없는 로컬 전용 프로젝트는 보존한다.
             const merged = mergePreservingLocalReceipts(
-              toAppStore(remote),
+              mergeStoresByProjectId(remoteStore, storeRef.current),
               storeRef.current,
             )
             setStore(normalizeStore(merged))
@@ -137,6 +144,18 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
             setLastSyncedAt(Date.now())
             setStatus('synced')
             setErrorMessage(null)
+
+            if (!projectIdsEqual(merged, remoteStore)) {
+              void pushCloudStore(fbUser.uid, merged)
+                .then((ts) => {
+                  lastPushedUpdatedAtRef.current = ts
+                  setLastSyncedAt(ts)
+                })
+                .catch((err) => {
+                  setStatus('error')
+                  setErrorMessage(syncErrorMessage(err))
+                })
+            }
           },
           (err) => {
             setStatus('error')
@@ -203,16 +222,27 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
 
   // 로컬 변경 → 클라우드 업로드 (debounce)
   useEffect(() => {
-    const uid = uidRef.current
-    if (!uid || !initialSyncDoneRef.current) return
-    if (!isCloudSyncConfigured()) return
-
-    // 초기 동기화/원격 수신으로 인해 store가 바뀐 경우는 업로드하지 않는다.
-    // (이걸 올리면 onSnapshot 에코 → 재업로드가 반복되는 무한 루프가 생긴다.)
+    // 원격 적용으로 인한 store 변경은 업로드하지 않는다.
     if (skipUploadsRef.current > 0) {
       skipUploadsRef.current -= 1
       return
     }
+
+    // 첫 실행은 저장된 로컬 데이터 로드 → dirty 아님
+    if (!storeBootstrappedRef.current) {
+      storeBootstrappedRef.current = true
+      return
+    }
+
+    // 동기화 전이거나 업로드 실패 시에도 "미동기화 로컬 변경"으로 표시한다.
+    // (재접속 시 오래된 클라우드가 로컬을 덮어쓰지 않도록)
+    if (isCloudSyncConfigured()) {
+      markLocalDirty()
+    }
+
+    const uid = uidRef.current
+    if (!uid || !initialSyncDoneRef.current) return
+    if (!isCloudSyncConfigured()) return
 
     setStatus('syncing')
     const timer = window.setTimeout(() => {
