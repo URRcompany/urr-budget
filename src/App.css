@@ -2900,20 +2900,21 @@ button {
     margin-right: -0.1rem;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.06);
   }
 
   .sidebar__list::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
 
   .sidebar__list::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.4);
   }
 
   .sidebar__list::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
   }
 
   .sidebar__empty {
