@@ -1,6 +1,8 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import type { LaborPayment } from '../types'
+import { formatKRW } from '../lib/format'
+import { calcWithholding, withholdingRateLabel } from '../lib/withholding'
 
 interface LaborPaymentFormProps {
   open: boolean
@@ -62,6 +64,12 @@ export function LaborPaymentForm({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
+  const withholding = useMemo(() => {
+    const amount = Number(String(form.amount).replace(/,/g, ''))
+    if (!Number.isFinite(amount) || amount <= 0) return null
+    return calcWithholding(amount)
+  }, [form.amount])
+
   if (!open) return null
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,7 +114,8 @@ export function LaborPaymentForm({
 
         <form className="form" onSubmit={handleSubmit}>
           <p className="form-hint muted">
-            지급 완료로 표시하면 지출 내역에 자동 등록됩니다.
+            인건비는 공급·부가세가 아니라 <strong>원천세 {withholdingRateLabel()}</strong>
+            (소득세 3% + 지방소득세 0.3%)입니다. 지급 완료 시 지출에 자동 등록됩니다.
           </p>
 
           <div className="field-row">
@@ -131,7 +140,7 @@ export function LaborPaymentForm({
 
           <div className="field-row">
             <label className="field">
-              <span>금액 (원)</span>
+              <span>지급 총액 (원)</span>
               <input
                 inputMode="numeric"
                 value={form.amount}
@@ -148,6 +157,13 @@ export function LaborPaymentForm({
               />
             </label>
           </div>
+
+          {withholding && (
+            <div className="form-hint vat-preview" role="status">
+              원천세 {withholdingRateLabel()} {formatKRW(withholding.tax)} · 실수령{' '}
+              {formatKRW(withholding.net)}
+            </div>
+          )}
 
           <label className="field field--checkbox">
             <input

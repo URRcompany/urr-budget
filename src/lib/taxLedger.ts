@@ -90,6 +90,9 @@ export function getPortfolioTaxSummary(projects: Project[]): PortfolioTaxSummary
     }
 
     for (const e of p.expenses) {
+      // 인건비는 공급/부가세·세금계산서 대상이 아님 (원천세 3.3%)
+      if (e.categoryId === 'labor') continue
+
       const tax = resolveExpenseTax(e)
       const mode = tax.mode
       totalSupply += tax.supply

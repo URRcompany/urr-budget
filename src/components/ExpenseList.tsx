@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { Category, Expense } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
 import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
+import { calcWithholding, withholdingRateLabel } from '../lib/withholding'
 
 interface ExpenseListProps {
   expenses: Expense[]
@@ -82,7 +83,14 @@ export function ExpenseList({
                 {expanded && (
                   <div className="expense-row__detail">
                     {e.vendor && <p className="muted">거래처: {e.vendor}</p>}
-                    {tax.vat > 0 ? (
+                    {isLinked || e.categoryId === 'labor' ? (
+                      <p className="muted">
+                        {(() => {
+                          const wh = calcWithholding(e.amount)
+                          return `원천세 ${withholdingRateLabel()} ${formatKRW(wh.tax)} · 실수령 ${formatKRW(wh.net)}`
+                        })()}
+                      </p>
+                    ) : tax.vat > 0 ? (
                       <p className="muted">
                         공급 {formatKRW(tax.supply)} + VAT {formatKRW(tax.vat)}
                       </p>
@@ -168,18 +176,28 @@ export function ExpenseList({
                     <span>{e.vendor}</span>
                   </>
                 )}
-                {(e.invoiceReceived ?? false) ? (
+                {(e.invoiceReceived ?? false) && !isLinked && e.categoryId !== 'labor' ? (
                   <>
                     <span aria-hidden>·</span>
                     <span className="profit">계산서 수령</span>
                   </>
-                ) : (
+                ) : !isLinked && e.categoryId !== 'labor' ? (
                   <>
                     <span aria-hidden>·</span>
                     <span className="warn-text">계산서 미수령</span>
                   </>
-                )}
-                {tax.vat > 0 ? (
+                ) : null}
+                {isLinked || e.categoryId === 'labor' ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {(() => {
+                        const wh = calcWithholding(e.amount)
+                        return `원천세 ${withholdingRateLabel()} ${formatKRW(wh.tax)} · 실수령 ${formatKRW(wh.net)}`
+                      })()}
+                    </span>
+                  </>
+                ) : tax.vat > 0 ? (
                   <>
                     <span aria-hidden>·</span>
                     <span>
