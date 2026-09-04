@@ -30,3 +30,21 @@ export function withholdingRateLabel(rate = WITHHOLDING_RATE): string {
 export function formatWithholdingNote(breakdown: WithholdingBreakdown): string {
   return `원천세 ${withholdingRateLabel(breakdown.rate)}`
 }
+
+/** 인건비 탭에서 지급 연동된 지출만 원천세 대상 (식비·장비대 등 일반 지출 제외) */
+export function isLaborWithholdingExpense(
+  expenseId: string,
+  laborPayments: ReadonlyArray<{ expenseId?: string }>,
+): boolean {
+  return laborPayments.some((lp) => lp.expenseId === expenseId)
+}
+
+export function laborWithholdingExpenseIds(
+  laborPayments: ReadonlyArray<{ expenseId?: string }>,
+): Set<string> {
+  const ids = new Set<string>()
+  for (const lp of laborPayments) {
+    if (lp.expenseId) ids.add(lp.expenseId)
+  }
+  return ids
+}

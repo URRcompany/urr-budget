@@ -8,7 +8,7 @@ import {
 import { getPortfolioTaxSummary } from '../lib/taxLedger'
 import { formatDate, formatKRW } from '../lib/format'
 import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
-import { calcWithholding, withholdingRateLabel } from '../lib/withholding'
+import { calcWithholding, laborWithholdingExpenseIds, withholdingRateLabel } from '../lib/withholding'
 import type { Project } from '../types'
 import { AppBrand } from './AppBrand'
 
@@ -28,17 +28,19 @@ export function TaxInvoiceDashboard({
   const data = getPortfolioTaxSummary(projects)
   const allClear = data.attentionCount === 0
 
-  const vatExpenses = projects.flatMap((p) =>
-    p.expenses
-      .filter((e) => e.categoryId !== 'labor')
-      .map((e) => ({ project: p, expense: e })),
-  )
+  const vatExpenses = projects.flatMap((p) => {
+    const ids = laborWithholdingExpenseIds(p.laborPayments)
+    return p.expenses
+      .filter((e) => !ids.has(e.id))
+      .map((e) => ({ project: p, expense: e }))
+  })
 
-  const laborExpenses = projects.flatMap((p) =>
-    p.expenses
-      .filter((e) => e.categoryId === 'labor')
-      .map((e) => ({ project: p, expense: e })),
-  )
+  const laborExpenses = projects.flatMap((p) => {
+    const ids = laborWithholdingExpenseIds(p.laborPayments)
+    return p.expenses
+      .filter((e) => ids.has(e.id))
+      .map((e) => ({ project: p, expense: e }))
+  })
 
   const laborTotals = laborExpenses.reduce(
     (acc, { expense }) => {
@@ -137,7 +139,7 @@ export function TaxInvoiceDashboard({
             <header className="section__head">
               <div>
                 <h2 id="vat-mode-heading">부가세 구분 (매입)</h2>
-                <p className="muted">일반 지출 VAT · 인건비(원천세)는 포함하지 않음</p>
+                <p className="muted">일반 지출 VAT · 인건비 탭 연동분만 원천세</p>
               </div>
             </header>
             <div className="tax-vat-grid">

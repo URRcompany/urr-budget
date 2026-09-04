@@ -1,5 +1,6 @@
 import type { Project } from '../types'
 import { resolveExpenseTax, vatModeLabel, type VatMode } from './vat'
+import { laborWithholdingExpenseIds } from './withholding'
 
 export interface SalesInvoiceRow {
   projectId: string
@@ -89,9 +90,11 @@ export function getPortfolioTaxSummary(projects: Project[]): PortfolioTaxSummary
       }
     }
 
+    const withholdingIds = laborWithholdingExpenseIds(p.laborPayments)
+
     for (const e of p.expenses) {
-      // 인건비는 공급/부가세·세금계산서 대상이 아님 (원천세 3.3%)
-      if (e.categoryId === 'labor') continue
+      // 인건비 탭에서 지급 연동된 지출만 원천세 — 식비·장비대 등 일반 매입은 부가세 집계
+      if (withholdingIds.has(e.id)) continue
 
       const tax = resolveExpenseTax(e)
       const mode = tax.mode
