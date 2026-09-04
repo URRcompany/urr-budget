@@ -20,7 +20,7 @@ import {
 import { uid } from '../lib/format'
 import { monthKey } from '../lib/ledger'
 import { normalizeExpenseTaxFields } from '../lib/vat'
-import { calcWithholding } from '../lib/withholding'
+import { calcWithholding, laborWithholdingExpenseIds } from '../lib/withholding'
 import { normalizeProjectContractInput, syncProjectContractBudget } from '../lib/contract'
 import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
@@ -30,8 +30,13 @@ const LEGACY_KEY = 'reelbudget.project.v1'
 
 const SAMPLE_PROJECT_IDS = new Set(['p_sample_dawn', 'p_sample_mv'])
 
-function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>): Expense {
-  const isLabor = e.categoryId === 'labor'
+function normalizeExpense(
+  e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>,
+  opts?: { withholding?: boolean },
+): Expense {
+  const withholding = opts?.withholding === true
+  const restoreVat = !withholding && e.categoryId === 'labor' && e.vatMode === 'exempt'
+
   const base = {
     id: e.id,
     title: e.title,
@@ -40,11 +45,14 @@ function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | '
     date: e.date,
     note: e.note ?? '',
     vendor: e.vendor ?? '',
-    // 인건비는 세금계산서(공급/부가세)가 아니라 원천세 — 계산서 추적에서 제외
-    invoiceReceived: isLabor ? true : (e.invoiceReceived ?? false),
-    vatMode: isLabor ? ('exempt' as const) : (e.vatMode ?? 'included'),
-    supplyAmount: e.supplyAmount,
-    vatAmount: isLabor ? 0 : e.vatAmount,
+    invoiceReceived: withholding ? true : (e.invoiceReceived ?? false),
+    vatMode: withholding
+      ? ('exempt' as const)
+      : restoreVat
+        ? ('included' as const)
+        : (e.vatMode ?? 'included'),
+    supplyAmount: withholding || restoreVat ? undefined : e.supplyAmount,
+    vatAmount: withholding ? 0 : restoreVat ? undefined : e.vatAmount,
     receiptDataUrl: e.receiptDataUrl ?? '',
     receiptFileName: e.receiptFileName ?? '',
   }
@@ -71,17 +79,22 @@ function normalizeClientPayment(
 
 function normalizeProject(p: Partial<Project> & { name: string }): Project {
   const base = createEmptyProject()
+  const laborPayments = p.laborPayments ?? []
+  const withholdingIds = laborWithholdingExpenseIds(laborPayments)
   const merged = {
     ...base,
     ...p,
     categories: p.categories?.length ? p.categories : base.categories,
     expenses: (p.expenses ?? []).map((e) =>
-      normalizeExpense(e as Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>),
+      normalizeExpense(
+        e as Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>,
+        { withholding: withholdingIds.has(e.id) },
+      ),
     ),
     clientPayments: (p.clientPayments ?? []).map((cp) =>
       normalizeClientPayment(cp as Partial<ClientPayment> & Pick<ClientPayment, 'id' | 'label' | 'amount'>),
     ),
-    laborPayments: p.laborPayments ?? [],
+    laborPayments,
   }
   const contract = syncProjectContractBudget(merged)
   return { ...merged, ...contract }

@@ -27,7 +27,8 @@ export function ExpenseForm({
   onSubmit,
 }: ExpenseFormProps) {
   const titleId = useId()
-  const defaultCategory = categories[0]?.id ?? 'other'
+  const defaultCategory =
+    categories.find((c) => c.id !== 'labor')?.id ?? categories[0]?.id ?? 'other'
   const [form, setForm] = useState({
     title: '',
     amount: '',
@@ -66,7 +67,8 @@ export function ExpenseForm({
         title: '',
         amount: '',
         supplyAmount: '',
-        categoryId: categories[0]?.id ?? 'other',
+        categoryId:
+          categories.find((c) => c.id !== 'labor')?.id ?? categories[0]?.id ?? 'other',
         date: new Date().toISOString().slice(0, 10),
         note: '',
         vendor: '',
@@ -211,6 +213,13 @@ export function ExpenseForm({
               </select>
             </label>
           </div>
+
+          {form.categoryId === 'labor' && (
+            <p className="form-hint muted">
+              스태프 인건비(원천세 3.3%)는 <strong>입금·인건비</strong> 탭에서 등록하세요.
+              여기서 저장하면 일반 지출(부가세)로 처리됩니다.
+            </p>
+          )}
 
           <button
             type="button"

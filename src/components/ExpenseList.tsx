@@ -83,7 +83,7 @@ export function ExpenseList({
                 {expanded && (
                   <div className="expense-row__detail">
                     {e.vendor && <p className="muted">거래처: {e.vendor}</p>}
-                    {isLinked || e.categoryId === 'labor' ? (
+                    {isLinked ? (
                       <p className="muted">
                         {(() => {
                           const wh = calcWithholding(e.amount)
@@ -176,18 +176,18 @@ export function ExpenseList({
                     <span>{e.vendor}</span>
                   </>
                 )}
-                {(e.invoiceReceived ?? false) && !isLinked && e.categoryId !== 'labor' ? (
+                {(e.invoiceReceived ?? false) && !isLinked ? (
                   <>
                     <span aria-hidden>·</span>
                     <span className="profit">계산서 수령</span>
                   </>
-                ) : !isLinked && e.categoryId !== 'labor' ? (
+                ) : !isLinked ? (
                   <>
                     <span aria-hidden>·</span>
                     <span className="warn-text">계산서 미수령</span>
                   </>
                 ) : null}
-                {isLinked || e.categoryId === 'labor' ? (
+                {isLinked ? (
                   <>
                     <span aria-hidden>·</span>
                     <span>
