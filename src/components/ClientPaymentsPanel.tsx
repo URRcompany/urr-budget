@@ -44,10 +44,14 @@ export function ClientPaymentsPanel({
   const advancePaid = payments
     .filter((p) => p.kind === 'advance' && p.isPaid)
     .reduce((s, p) => s + p.amount, 0)
+  const balancePaid = payments
+    .filter((p) => p.kind === 'balance' && p.isPaid)
+    .reduce((s, p) => s + p.amount, 0)
   const balanceOutstanding = payments
     .filter((p) => p.kind === 'balance' && !p.isPaid)
     .reduce((s, p) => s + p.amount, 0)
   const hasAdvanceBalance = payments.some((p) => p.kind === 'advance' || p.kind === 'balance')
+  const allClientPaid = payments.length > 0 && pendingCount === 0
 
   return (
     <section className="section payment-panel" aria-labelledby="client-pay-heading">
@@ -56,6 +60,9 @@ export function ClientPaymentsPanel({
           <h2 id="client-pay-heading">클라이언트 입금</h2>
           <p className="muted">
             입금 {formatKRW(received)} / 계약 {formatKRW(revenue)}
+            {allClientPaid && (
+              <span className="badge badge--ok payment-panel__badge">입금 완료</span>
+            )}
             {overdueCount > 0 && (
               <span className="badge badge--danger payment-panel__badge">
                 연체 {overdueCount}건
@@ -134,10 +141,16 @@ export function ClientPaymentsPanel({
             선납금 입금 <strong className="profit">{formatKRW(advancePaid)}</strong>
           </span>
           <span>
-            잔금 미수{' '}
-            <strong className={balanceOutstanding > 0 ? 'warn-text' : 'profit'}>
-              {formatKRW(balanceOutstanding)}
-            </strong>
+            {balanceOutstanding > 0 ? (
+              <>
+                잔금 미수{' '}
+                <strong className="warn-text">{formatKRW(balanceOutstanding)}</strong>
+              </>
+            ) : (
+              <>
+                잔금 입금 <strong className="profit">{formatKRW(balancePaid)}</strong>
+              </>
+            )}
           </span>
         </div>
       )}
@@ -167,10 +180,15 @@ export function ClientPaymentsPanel({
             입금 완료 <strong className="profit">{formatKRW(received)}</strong>
           </span>
           <span>
-            미수금{' '}
-            <strong className={outstanding > 0 ? 'warn-text' : 'profit'}>
-              {formatKRW(outstanding)}
-            </strong>
+            {outstanding > 0 ? (
+              <>
+                미수금 <strong className="warn-text">{formatKRW(outstanding)}</strong>
+              </>
+            ) : (
+              <>
+                미수금 없음 <strong className="profit">{formatKRW(0)}</strong>
+              </>
+            )}
           </span>
           <span className="muted">{pct}%</span>
         </div>
