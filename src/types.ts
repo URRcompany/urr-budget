@@ -45,11 +45,12 @@ export interface ClientPayment {
   invoiceDate?: string
 }
 
-/** 스태프·외주 인건비 지급 */
+/** 스태프·외주 인건비 지급 (부가세 아님 — 원천세 3.3%) */
 export interface LaborPayment {
   id: string
   name: string
   role: string
+  /** 지급 총액(계약·세전). 원천세 3.3%는 이 금액 기준으로 계산 */
   amount: number
   workDate: string
   paidDate: string

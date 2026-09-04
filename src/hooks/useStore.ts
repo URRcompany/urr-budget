@@ -20,6 +20,7 @@ import {
 import { uid } from '../lib/format'
 import { monthKey } from '../lib/ledger'
 import { normalizeExpenseTaxFields } from '../lib/vat'
+import { calcWithholding } from '../lib/withholding'
 import { normalizeProjectContractInput, syncProjectContractBudget } from '../lib/contract'
 import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
@@ -30,6 +31,7 @@ const LEGACY_KEY = 'reelbudget.project.v1'
 const SAMPLE_PROJECT_IDS = new Set(['p_sample_dawn', 'p_sample_mv'])
 
 function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | 'amount' | 'categoryId' | 'date'>): Expense {
+  const isLabor = e.categoryId === 'labor'
   const base = {
     id: e.id,
     title: e.title,
@@ -38,10 +40,11 @@ function normalizeExpense(e: Partial<Expense> & Pick<Expense, 'id' | 'title' | '
     date: e.date,
     note: e.note ?? '',
     vendor: e.vendor ?? '',
-    invoiceReceived: e.invoiceReceived ?? false,
-    vatMode: e.vatMode ?? 'included',
+    // 인건비는 세금계산서(공급/부가세)가 아니라 원천세 — 계산서 추적에서 제외
+    invoiceReceived: isLabor ? true : (e.invoiceReceived ?? false),
+    vatMode: isLabor ? ('exempt' as const) : (e.vatMode ?? 'included'),
     supplyAmount: e.supplyAmount,
-    vatAmount: e.vatAmount,
+    vatAmount: isLabor ? 0 : e.vatAmount,
     receiptDataUrl: e.receiptDataUrl ?? '',
     receiptFileName: e.receiptFileName ?? '',
   }
@@ -185,6 +188,37 @@ function loadStore(): AppStore {
     /* ignore */
   }
   return createInitialStore()
+}
+
+function laborExpenseFields(lp: {
+  name: string
+  role: string
+  amount: number
+  note: string
+  paidDate: string
+}): Omit<Expense, 'id'> {
+  const paidDate = lp.paidDate || new Date().toISOString().slice(0, 10)
+  const wh = calcWithholding(lp.amount)
+  const noteParts = [
+    lp.role,
+    lp.note,
+    `원천세 3.3% ${wh.tax.toLocaleString('ko-KR')}원 · 실수령 ${wh.net.toLocaleString('ko-KR')}원`,
+  ].filter(Boolean)
+
+  return {
+    title: `${lp.name} 인건비`,
+    amount: lp.amount,
+    categoryId: 'labor',
+    date: paidDate,
+    note: noteParts.join(' · '),
+    vendor: lp.name,
+    invoiceReceived: true,
+    vatMode: 'exempt',
+    supplyAmount: lp.amount,
+    vatAmount: 0,
+    receiptDataUrl: '',
+    receiptFileName: '',
+  }
 }
 
 export function useStore() {
@@ -576,19 +610,13 @@ export function useStore() {
 
         let expenses = p.expenses
         if (existing.isPaid && existing.expenseId) {
-          const paidDate =
-            data.paidDate || existing.paidDate || new Date().toISOString().slice(0, 10)
+          const fields = laborExpenseFields({
+            ...data,
+            paidDate:
+              data.paidDate || existing.paidDate || new Date().toISOString().slice(0, 10),
+          })
           expenses = p.expenses.map((e) =>
-            e.id === existing.expenseId
-              ? {
-                  ...e,
-                  title: `${data.name} 인건비`,
-                  amount: data.amount,
-                  date: paidDate,
-                  vendor: data.name,
-                  note: [data.role, data.note].filter(Boolean).join(' · '),
-                }
-              : e,
+            e.id === existing.expenseId ? { ...e, ...fields } : e,
           )
         }
 
@@ -630,23 +658,15 @@ export function useStore() {
           const paidDate = lp.paidDate || new Date().toISOString().slice(0, 10)
           let expenseId = lp.expenseId
           let expenses = p.expenses
+          const fields = laborExpenseFields({ ...lp, paidDate })
 
           if (!expenseId) {
             expenseId = uid()
-            expenses = [
-              {
-                id: expenseId,
-                title: `${lp.name} 인건비`,
-                amount: lp.amount,
-                categoryId: 'labor',
-                date: paidDate,
-                note: [lp.role, lp.note].filter(Boolean).join(' · '),
-                vendor: lp.name,
-                invoiceReceived: false,
-                vatMode: 'included',
-              },
-              ...p.expenses,
-            ]
+            expenses = [{ id: expenseId, ...fields }, ...p.expenses]
+          } else {
+            expenses = p.expenses.map((e) =>
+              e.id === expenseId ? { ...e, ...fields } : e,
+            )
           }
 
           return {

@@ -8,6 +8,7 @@ import type { Project } from '../types'
 import { APP_NAME, COMPANY_NAME } from './brand'
 import { resolveProjectContract } from './contract'
 import { getOverduePayments } from './receivables'
+import { calcWithholding } from './withholding'
 
 const exportLabel = `${COMPANY_NAME} ${APP_NAME}`
 
@@ -115,18 +116,23 @@ export function exportProjectCSV(project: Project) {
       ]
     }),
     [],
-    ['[인건비 지급]'],
-    ['이름', '역할', '금액', '근무일', '지급일', '상태', '지출연동', '메모'],
-    ...project.laborPayments.map((lp) => [
-      lp.name,
-      lp.role,
-      lp.amount,
-      lp.workDate,
-      lp.paidDate,
-      lp.isPaid ? '지급완료' : '미지급',
-      lp.expenseId ? '연동됨' : '',
-      lp.note,
-    ]),
+    ['[인건비 지급 — 원천세 3.3% (공급/부가세 아님)]'],
+    ['이름', '역할', '지급총액', '원천세(3.3%)', '실수령', '근무일', '지급일', '상태', '지출연동', '메모'],
+    ...project.laborPayments.map((lp) => {
+      const wh = calcWithholding(lp.amount)
+      return [
+        lp.name,
+        lp.role,
+        lp.amount,
+        wh.tax,
+        wh.net,
+        lp.workDate,
+        lp.paidDate,
+        lp.isPaid ? '지급완료' : '미지급',
+        lp.expenseId ? '연동됨' : '',
+        lp.note,
+      ]
+    }),
   ]
 
   downloadCSV(`${APP_NAME}_${project.name.replace(/\s/g, '_')}.csv`, rowsToCSV(rows))

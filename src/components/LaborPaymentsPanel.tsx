@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Circle, Pencil, Plus, Trash2, User } from 'lucide-react'
 import type { LaborPayment } from '../types'
 import { formatDate, formatKRW } from '../lib/format'
+import { calcWithholding, withholdingRateLabel } from '../lib/withholding'
 import { LaborPaymentForm } from './LaborPaymentForm'
 
 interface LaborPaymentsPanelProps {
@@ -56,8 +57,8 @@ export function LaborPaymentsPanel({
       <div className="labor-callout" role="note">
         <strong>인건비는 여기서만 등록하세요.</strong>
         <p>
-          지급 완료 체크 시 <em>지출 내역</em>과 <em>인건비 카테고리</em>에 자동
-          반영됩니다. 지출 탭에서 따로 입력할 필요가 없습니다.
+          공급·부가세가 아니라 <em>원천세 {withholdingRateLabel()}</em>입니다.
+          지급 완료 체크 시 지출·인건비 카테고리에 자동 반영됩니다.
         </p>
       </div>
 
@@ -113,7 +114,9 @@ export function LaborPaymentsPanel({
         </div>
       ) : (
         <ul className="payment-list">
-          {payments.map((p) => (
+          {payments.map((p) => {
+            const wh = calcWithholding(p.amount)
+            return (
             <li
               key={p.id}
               className={`payment-row payment-row--labor ${p.isPaid ? 'payment-row--done' : ''}`}
@@ -144,6 +147,7 @@ export function LaborPaymentsPanel({
                   {p.isPaid && p.paidDate
                     ? `지급 ${formatDate(p.paidDate)}`
                     : '미지급'}
+                  <> · 원천세 {formatKRW(wh.tax)} · 실수령 {formatKRW(wh.net)}</>
                   {p.isPaid && p.expenseId && (
                     <> · <span className="link-badge">지출 연동</span></>
                   )}
@@ -173,7 +177,8 @@ export function LaborPaymentsPanel({
                 <Trash2 size={15} />
               </button>
             </li>
-          ))}
+            )
+          })}
         </ul>
       )}
 
