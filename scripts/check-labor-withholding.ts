@@ -70,4 +70,8 @@ assert.equal(summary.purchaseUnreceived[0].expenseId, 'e_gear')
 assert.ok(!summary.purchaseUnreceived.some((r) => r.expenseId === 'e_labor'))
 assert.equal(summary.totalVat, resolveExpenseTax(project.expenses[1]).vat)
 
+// Labor rows must not be treated as VAT-included in summaries
+assert.equal(summary.vatByMode.included.count, 1)
+assert.equal(summary.totalExpenseAmount, project.expenses[1].amount)
+
 console.log('check-labor-withholding: ok')

@@ -3,10 +3,12 @@ import {
   Receipt,
   TrendingDown,
   TrendingUp,
+  Users,
 } from 'lucide-react'
 import { getPortfolioTaxSummary } from '../lib/taxLedger'
 import { formatDate, formatKRW } from '../lib/format'
 import { resolveExpenseTax, vatModeLabel } from '../lib/vat'
+import { calcWithholding, withholdingRateLabel } from '../lib/withholding'
 import type { Project } from '../types'
 import { AppBrand } from './AppBrand'
 
@@ -26,6 +28,35 @@ export function TaxInvoiceDashboard({
   const data = getPortfolioTaxSummary(projects)
   const allClear = data.attentionCount === 0
 
+  const vatExpenses = projects.flatMap((p) =>
+    p.expenses
+      .filter((e) => e.categoryId !== 'labor')
+      .map((e) => ({ project: p, expense: e })),
+  )
+
+  const laborExpenses = projects.flatMap((p) =>
+    p.expenses
+      .filter((e) => e.categoryId === 'labor')
+      .map((e) => ({ project: p, expense: e })),
+  )
+
+  const laborTotals = laborExpenses.reduce(
+    (acc, { expense }) => {
+      const wh = calcWithholding(expense.amount)
+      acc.gross += wh.gross
+      acc.tax += wh.tax
+      acc.net += wh.net
+      return acc
+    },
+    { gross: 0, tax: 0, net: 0 },
+  )
+
+  const hasAny =
+    data.totalExpenseAmount > 0 ||
+    data.salesIssuedCount > 0 ||
+    data.salesUnissuedCount > 0 ||
+    laborExpenses.length > 0
+
   return (
     <div className="receivables-page tax-page">
       <header className="receivables-page__hero">
@@ -42,7 +73,7 @@ export function TaxInvoiceDashboard({
           <AppBrand size="sm" />
           <h1 className="receivables-page__title">세금·계산서 현황</h1>
           <p className="muted">
-            매출 세금계산서 발행 여부와 매입 부가세·계산서 수령을 한곳에서 확인하세요.
+            매출·매입 부가세와 인건비 원천세({withholdingRateLabel()})를 구분해 확인하세요.
           </p>
         </div>
 
@@ -77,12 +108,24 @@ export function TaxInvoiceDashboard({
             <span className="muted">
               공급가 {formatKRW(data.totalSupply)} · 합계{' '}
               {formatKRW(data.totalExpenseAmount)}
+              <span className="muted"> (인건비 제외)</span>
             </span>
           </article>
+          {laborExpenses.length > 0 && (
+            <article className="receivables-summary__card">
+              <Users size={20} aria-hidden />
+              <span className="label">인건비 원천세 {withholdingRateLabel()}</span>
+              <strong>{formatKRW(laborTotals.tax)}</strong>
+              <span className="muted">
+                지급총액 {formatKRW(laborTotals.gross)} · 실수령{' '}
+                {formatKRW(laborTotals.net)} · {laborExpenses.length}건
+              </span>
+            </article>
+          )}
         </div>
       </header>
 
-      {allClear && data.totalExpenseAmount === 0 && data.salesIssuedCount === 0 ? (
+      {!hasAny ? (
         <div className="empty receivables-page__empty">
           <CheckCircle2 size={36} strokeWidth={1.5} aria-hidden />
           <p>등록된 입금·지출이 없습니다.</p>
@@ -94,7 +137,7 @@ export function TaxInvoiceDashboard({
             <header className="section__head">
               <div>
                 <h2 id="vat-mode-heading">부가세 구분 (매입)</h2>
-                <p className="muted">지출 등록 시 선택한 VAT 방식별 합계</p>
+                <p className="muted">일반 지출 VAT · 인건비(원천세)는 포함하지 않음</p>
               </div>
             </header>
             <div className="tax-vat-grid">
@@ -127,6 +170,11 @@ export function TaxInvoiceDashboard({
                   </article>
                 )
               })}
+              {data.vatByMode.included.count === 0 &&
+                data.vatByMode.separate.count === 0 &&
+                data.vatByMode.exempt.count === 0 && (
+                  <p className="muted">부가세 대상 매입 지출이 없습니다.</p>
+                )}
             </div>
           </section>
 
@@ -172,7 +220,7 @@ export function TaxInvoiceDashboard({
               <header className="section__head">
                 <div>
                   <h2 id="purchase-unreceived-heading">매입 계산서 미수령</h2>
-                  <p className="muted">공급가·부가세·합계 · VAT 구분 포함</p>
+                  <p className="muted">일반 지출 · 공급가·부가세 (인건비 제외)</p>
                 </div>
               </header>
               <div className="receivables-table-wrap">
@@ -181,9 +229,15 @@ export function TaxInvoiceDashboard({
                     <tr>
                       <th scope="col">프로젝트 / 지출</th>
                       <th scope="col">VAT 구분</th>
-                      <th scope="col" className="num">공급가</th>
-                      <th scope="col" className="num">부가세</th>
-                      <th scope="col" className="num">합계</th>
+                      <th scope="col" className="num">
+                        공급가
+                      </th>
+                      <th scope="col" className="num">
+                        부가세
+                      </th>
+                      <th scope="col" className="num">
+                        합계
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -230,11 +284,11 @@ export function TaxInvoiceDashboard({
             <header className="section__head">
               <div>
                 <h2 id="all-purchases-heading">전체 매입 VAT 내역</h2>
-                <p className="muted">모든 지출 · 공급가 / 부가세 / 합계 / 계산서 수령</p>
+                <p className="muted">일반 지출만 · 인건비는 아래 원천세 목록 참고</p>
               </div>
             </header>
-            {data.totalExpenseAmount === 0 ? (
-              <p className="muted">등록된 지출이 없습니다.</p>
+            {vatExpenses.length === 0 ? (
+              <p className="muted">부가세 대상 매입 지출이 없습니다.</p>
             ) : (
               <div className="receivables-table-wrap">
                 <table className="receivables-table tax-table">
@@ -242,47 +296,51 @@ export function TaxInvoiceDashboard({
                     <tr>
                       <th scope="col">프로젝트 / 지출</th>
                       <th scope="col">VAT 구분</th>
-                      <th scope="col" className="num">공급가</th>
-                      <th scope="col" className="num">부가세</th>
-                      <th scope="col" className="num">합계</th>
+                      <th scope="col" className="num">
+                        공급가
+                      </th>
+                      <th scope="col" className="num">
+                        부가세
+                      </th>
+                      <th scope="col" className="num">
+                        합계
+                      </th>
                       <th scope="col">계산서</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {projects.flatMap((p) =>
-                      p.expenses.map((e) => {
-                        const tax = resolveExpenseTax(e)
-                        const received = e.invoiceReceived ?? false
-                        return (
-                          <tr key={e.id}>
-                            <td>
-                              <button
-                                type="button"
-                                className="receivables-table__link"
-                                onClick={() => onOpenProject(p.id)}
-                              >
-                                <strong>{e.title}</strong>
-                                <span className="muted">
-                                  {p.name}
-                                  {e.vendor ? ` · ${e.vendor}` : ''} · {formatDate(e.date)}
-                                </span>
-                              </button>
-                            </td>
-                            <td>{vatModeLabel(tax.mode)}</td>
-                            <td className="num">{formatKRW(tax.supply)}</td>
-                            <td className="num">{formatKRW(tax.vat)}</td>
-                            <td className="num">{formatKRW(tax.total)}</td>
-                            <td>
-                              {received ? (
-                                <span className="badge badge--ok">수령</span>
-                              ) : (
-                                <span className="badge badge--warn">미수령</span>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      }),
-                    )}
+                    {vatExpenses.map(({ project: p, expense: e }) => {
+                      const tax = resolveExpenseTax(e)
+                      const received = e.invoiceReceived ?? false
+                      return (
+                        <tr key={e.id}>
+                          <td>
+                            <button
+                              type="button"
+                              className="receivables-table__link"
+                              onClick={() => onOpenProject(p.id)}
+                            >
+                              <strong>{e.title}</strong>
+                              <span className="muted">
+                                {p.name}
+                                {e.vendor ? ` · ${e.vendor}` : ''} · {formatDate(e.date)}
+                              </span>
+                            </button>
+                          </td>
+                          <td>{vatModeLabel(tax.mode)}</td>
+                          <td className="num">{formatKRW(tax.supply)}</td>
+                          <td className="num">{formatKRW(tax.vat)}</td>
+                          <td className="num">{formatKRW(tax.total)}</td>
+                          <td>
+                            {received ? (
+                              <span className="badge badge--ok">수령</span>
+                            ) : (
+                              <span className="badge badge--warn">미수령</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                   <tfoot>
                     <tr>
@@ -294,6 +352,80 @@ export function TaxInvoiceDashboard({
                         <strong>{formatKRW(data.totalExpenseAmount)}</strong>
                       </td>
                       <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="section receivables-section" aria-labelledby="labor-withholding-heading">
+            <header className="section__head">
+              <div>
+                <h2 id="labor-withholding-heading">인건비 원천세 내역</h2>
+                <p className="muted">
+                  공급·부가세가 아닙니다 · 원천세 {withholdingRateLabel()} (소득세 3% + 지방소득세
+                  0.3%)
+                </p>
+              </div>
+            </header>
+            {laborExpenses.length === 0 ? (
+              <p className="muted">지급 완료된 인건비가 없습니다.</p>
+            ) : (
+              <div className="receivables-table-wrap">
+                <table className="receivables-table tax-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">프로젝트 / 인건비</th>
+                      <th scope="col">구분</th>
+                      <th scope="col" className="num">
+                        지급총액
+                      </th>
+                      <th scope="col" className="num">
+                        원천세
+                      </th>
+                      <th scope="col" className="num">
+                        실수령
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {laborExpenses.map(({ project: p, expense: e }) => {
+                      const wh = calcWithholding(e.amount)
+                      return (
+                        <tr key={e.id}>
+                          <td>
+                            <button
+                              type="button"
+                              className="receivables-table__link"
+                              onClick={() => onOpenProject(p.id)}
+                            >
+                              <strong>{e.title}</strong>
+                              <span className="muted">
+                                {p.name}
+                                {e.vendor ? ` · ${e.vendor}` : ''} · {formatDate(e.date)}
+                              </span>
+                            </button>
+                          </td>
+                          <td>원천세 {withholdingRateLabel()}</td>
+                          <td className="num">{formatKRW(wh.gross)}</td>
+                          <td className="num">{formatKRW(wh.tax)}</td>
+                          <td className="num">
+                            <strong>{formatKRW(wh.net)}</strong>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td>합계</td>
+                      <td />
+                      <td className="num">{formatKRW(laborTotals.gross)}</td>
+                      <td className="num">{formatKRW(laborTotals.tax)}</td>
+                      <td className="num">
+                        <strong>{formatKRW(laborTotals.net)}</strong>
+                      </td>
                     </tr>
                   </tfoot>
                 </table>
