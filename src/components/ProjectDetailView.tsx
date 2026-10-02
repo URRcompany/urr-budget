@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Plus, Download } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Plus, Download, MessageCircle } from 'lucide-react'
 import type { Category, ClientPayment, Expense, LaborPayment, Project } from '../types'
 import { BudgetHero } from './BudgetHero'
 import { ClientPaymentsPanel } from './ClientPaymentsPanel'
@@ -11,6 +11,10 @@ import { MonthlyLedger } from './MonthlyLedger'
 import { OverdueAlert } from './OverdueAlert'
 import { exportProjectCSV } from '../lib/export'
 import { exportQuotationPDF } from '../lib/quotation'
+import {
+  copyEquipmentShareText,
+  getEquipmentExpenses,
+} from '../lib/equipmentShare'
 
 type DetailTab = 'budget' | 'payments' | 'ledger'
 
@@ -136,6 +140,10 @@ export function ProjectDetailView({
   const [tab, setTab] = useState<DetailTab>('budget')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
+  const [equipmentCopyState, setEquipmentCopyState] = useState<
+    'idle' | 'copied' | 'empty' | 'failed'
+  >('idle')
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const linkedExpenseIds = useMemo(
     () =>
@@ -146,6 +154,40 @@ export function ProjectDetailView({
       ),
     [project.laborPayments],
   )
+
+  const equipmentCount = useMemo(
+    () => getEquipmentExpenses(project).length,
+    [project],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (copyResetRef.current) clearTimeout(copyResetRef.current)
+    }
+  }, [])
+
+  const handleCopyEquipmentShare = async () => {
+    const result = await copyEquipmentShareText(project)
+    if (copyResetRef.current) clearTimeout(copyResetRef.current)
+    if (result.count === 0) {
+      setEquipmentCopyState('empty')
+    } else if (result.ok) {
+      setEquipmentCopyState('copied')
+    } else {
+      setEquipmentCopyState('failed')
+      window.prompt('복사가 차단되었습니다. 아래 텍스트를 직접 복사하세요.', result.text)
+    }
+    copyResetRef.current = setTimeout(() => setEquipmentCopyState('idle'), 2200)
+  }
+
+  const equipmentCopyLabel =
+    equipmentCopyState === 'copied'
+      ? '복사됨'
+      : equipmentCopyState === 'empty'
+        ? '내역 없음'
+        : equipmentCopyState === 'failed'
+          ? '복사 실패'
+          : '카톡용 장비목록'
 
   return (
     <>
@@ -184,6 +226,25 @@ export function ProjectDetailView({
             <OverdueAlert projects={[project]} />
 
             <div className="detail-export">
+              <button
+                type="button"
+                className={`btn btn--ghost btn--sm ${
+                  equipmentCopyState === 'copied' ? 'btn--copy-ok' : ''
+                }`}
+                onClick={() => void handleCopyEquipmentShare()}
+                title={
+                  equipmentCount > 0
+                    ? `장비대여 ${equipmentCount}건을 카톡용 텍스트로 복사`
+                    : '등록된 장비대여 지출이 있으면 복사할 수 있습니다'
+                }
+                aria-live="polite"
+              >
+                <MessageCircle size={15} />
+                {equipmentCopyLabel}
+                {equipmentCopyState === 'idle' && equipmentCount > 0
+                  ? ` (${equipmentCount})`
+                  : ''}
+              </button>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
