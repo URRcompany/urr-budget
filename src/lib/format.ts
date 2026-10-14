@@ -16,16 +16,26 @@ export function formatCompactKRW(amount: number): string {
   return amount.toLocaleString('ko-KR')
 }
 
-export function formatDate(iso: string): string {
+/** 2026-03-15 → 3월 15일 */
+export function formatShortDate(iso: string): string {
   if (!iso) return '—'
-  const d = new Date(iso + 'T00:00:00')
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(d)
+  const [, m, d] = iso.split('-').map(Number)
+  if (!m || !d) return iso
+  return `${m}월 ${d}일`
 }
 
-export function uid(): string {
-  return `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+/** 입력값에서 숫자만 추출 */
+export function parseAmount(raw: string): number {
+  const digits = raw.replace(/[^\d]/g, '')
+  return digits ? Number(digits) : 0
+}
+
+/** 입력 중 천 단위 콤마 */
+export function formatAmountInput(raw: string): string {
+  const n = parseAmount(raw)
+  return n ? n.toLocaleString('ko-KR') : ''
+}
+
+export function uid(prefix = 'e'): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
 }

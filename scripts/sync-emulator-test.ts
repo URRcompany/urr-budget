@@ -13,22 +13,6 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 
-function stripReceipts(store: {
-  projects: Array<{ expenses: Array<{ receiptDataUrl?: string; receiptFileName?: string }> }>
-}) {
-  return {
-    ...store,
-    projects: store.projects.map((p) => ({
-      ...p,
-      expenses: p.expenses.map((e) =>
-        e.receiptDataUrl
-          ? { ...e, receiptDataUrl: '', receiptFileName: e.receiptFileName ?? '' }
-          : e,
-      ),
-    })),
-  }
-}
-
 async function main() {
   const app = initializeApp({
     apiKey: 'fake-api-key',
@@ -49,48 +33,36 @@ async function main() {
   console.log('uid', uid)
 
   const store = {
-    version: 3,
+    version: 4,
     activeProjectId: 'p1',
     projects: [
       {
         id: 'p1',
         name: '에뮬 프로젝트',
-        expenses: [
-          {
-            id: 'e1',
-            title: '점심',
-            amount: 12000,
-            receiptDataUrl: 'data:image/jpeg;base64,' + 'X'.repeat(950_000),
-            receiptFileName: 'big.jpg',
-          },
+        client: '',
+        createdAt: new Date().toISOString(),
+        entries: [
+          { id: 'e1', kind: 'income', title: '계약금', amount: 1_000_000, date: '2026-10-01' },
+          { id: 'e2', kind: 'labor', title: '김촬영', amount: 300_000, date: '2026-10-02' },
         ],
       },
     ],
   }
 
-  assert.ok(JSON.stringify(store).length > 900_000)
-  const stripped = stripReceipts(store)
-  assert.equal(stripped.projects[0].expenses[0].receiptDataUrl, '')
-  assert.ok(JSON.stringify(stripped).length < 20_000)
-
   const updatedAt = Date.now()
+  const ref = doc(db, 'users', uid, 'data', 'storeV4')
   console.log('writing…')
   await Promise.race([
-    setDoc(doc(db, 'users', uid, 'data', 'store'), {
-      version: 3,
-      projects: stripped.projects,
-      activeProjectId: stripped.activeProjectId,
-      updatedAt,
-      updatedAtServer: serverTimestamp(),
-    }),
+    setDoc(ref, { ...store, updatedAt, updatedAtServer: serverTimestamp() }),
     new Promise((_, rej) => setTimeout(() => rej(new Error('write timeout')), 10000)),
   ])
 
-  const snap = await getDoc(doc(db, 'users', uid, 'data', 'store'))
+  const snap = await getDoc(ref)
   assert.equal(snap.exists(), true)
   const data = snap.data()!
+  assert.equal(data.version, 4)
   assert.equal(data.projects[0].name, '에뮬 프로젝트')
-  assert.equal(data.projects[0].expenses[0].receiptDataUrl, '')
+  assert.equal(data.projects[0].entries.length, 2)
   assert.equal(data.updatedAt, updatedAt)
 
   console.log('sync-emulator-test: ok', { uid, updatedAt })

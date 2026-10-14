@@ -13,7 +13,6 @@ import {
   subscribeCloudStore,
   setLocalSyncMeta,
   toAppStore,
-  mergePreservingLocalReceipts,
   mergeStoresByProjectId,
   projectIdsEqual,
   markLocalDirty,
@@ -134,10 +133,7 @@ export function useCloudSync({ store, setStore, normalizeStore }: UseCloudSyncOp
             skipUploadsRef.current += 1
             const remoteStore = toAppStore(remote)
             // 원격 내용을 우선하되, 아직 클라우드에 없는 로컬 전용 프로젝트는 보존한다.
-            const merged = mergePreservingLocalReceipts(
-              mergeStoresByProjectId(remoteStore, storeRef.current),
-              storeRef.current,
-            )
+            const merged = mergeStoresByProjectId(remoteStore, storeRef.current)
             setStore(normalizeStore(merged))
             setLocalSyncMeta(remote.updatedAt)
             applyingRemoteRef.current = false

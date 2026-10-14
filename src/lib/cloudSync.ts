@@ -6,7 +6,7 @@ import {
   setDoc,
   type Timestamp,
 } from 'firebase/firestore'
-import type { AppStore, Expense, Project } from '../types'
+import type { AppStore } from '../types'
 import { getFirestoreDb } from './firebase'
 
 export type SyncStatus =
@@ -20,15 +20,20 @@ export type SyncStatus =
 /** Firestore 문서 한도(1MiB)보다 여유를 둔 안전 상한 */
 const MAX_CLOUD_DOC_BYTES = 900_000
 
-const SYNC_META_KEY = 'reelbudget.sync.v1'
-const SYNC_DIRTY_KEY = 'reelbudget.sync.dirty.v1'
+/**
+ * 개편(v4) 데이터는 별도 문서에 저장한다. 이전 버전 앱이 같은 문서에
+ * v3 데이터를 덮어써 새 데이터를 지우는 일을 막기 위함.
+ */
+const STORE_DOC_ID = 'storeV4'
+const SYNC_META_KEY = 'reelbudget.sync.v4'
+const SYNC_DIRTY_KEY = 'reelbudget.sync.dirty.v4'
 
 export interface SyncMeta {
   updatedAt: number
 }
 
 export interface CloudStorePayload {
-  version: 3
+  version: 4
   projects: AppStore['projects']
   activeProjectId: string | null
   updatedAt: number
@@ -36,7 +41,7 @@ export interface CloudStorePayload {
 }
 
 function storeDocRef(uid: string) {
-  return doc(getFirestoreDb(), 'users', uid, 'data', 'store')
+  return doc(getFirestoreDb(), 'users', uid, 'data', STORE_DOC_ID)
 }
 
 export function getLocalSyncMeta(): SyncMeta {
@@ -75,32 +80,13 @@ export function clearLocalDirty(): void {
   localStorage.removeItem(SYNC_DIRTY_KEY)
 }
 
-function estimatePayloadBytes(payload: CloudStorePayload): number {
-  // JS 문자열 길이 ≈ UTF-16 코드 유닛. JSON ASCII/UTF-8 근사로 충분.
-  return JSON.stringify(payload).length
-}
-
-function stripExpenseReceipts(expense: Expense): Expense {
-  if (!expense.receiptDataUrl) return expense
-  return { ...expense, receiptDataUrl: '', receiptFileName: expense.receiptFileName ?? '' }
-}
-
-/** 영수증 base64가 Firestore 1MiB 한도를 넘기지 않도록 클라우드 페이로드에서 제거 */
-export function stripReceiptsFromStore(store: AppStore): AppStore {
-  return {
-    ...store,
-    projects: store.projects.map(
-      (p): Project => ({
-        ...p,
-        expenses: p.expenses.map(stripExpenseReceipts),
-      }),
-    ),
-  }
+function isValidPayload(data: Partial<CloudStorePayload> | undefined): data is CloudStorePayload {
+  return data?.version === 4 && Array.isArray(data.projects)
 }
 
 function buildPayload(store: AppStore, updatedAt: number): CloudStorePayload {
   return {
-    version: 3,
+    version: 4,
     projects: store.projects,
     activeProjectId: store.activeProjectId,
     updatedAt,
@@ -112,20 +98,14 @@ export async function fetchCloudStore(uid: string): Promise<CloudStorePayload | 
   const snap = await getDoc(storeDocRef(uid))
   if (!snap.exists()) return null
   const data = snap.data() as CloudStorePayload
-  if (data.version !== 3 || !Array.isArray(data.projects)) return null
-  return data
+  return isValidPayload(data) ? data : null
 }
 
 export async function pushCloudStore(uid: string, store: AppStore): Promise<number> {
   const updatedAt = Date.now()
-  let payload = buildPayload(store, updatedAt)
+  const payload = buildPayload(store, updatedAt)
 
-  if (estimatePayloadBytes(payload) > MAX_CLOUD_DOC_BYTES) {
-    // 로컬에는 영수증을 유지하고, 클라우드에는 메타만 올린다.
-    payload = buildPayload(stripReceiptsFromStore(store), updatedAt)
-  }
-
-  if (estimatePayloadBytes(payload) > MAX_CLOUD_DOC_BYTES) {
+  if (JSON.stringify(payload).length > MAX_CLOUD_DOC_BYTES) {
     throw new Error(
       '동기화 데이터가 너무 큽니다. 프로젝트 수를 줄이거나 백업 후 정리해 주세요.',
     )
@@ -147,7 +127,7 @@ export function subscribeCloudStore(
     (snap) => {
       if (!snap.exists()) return
       const data = snap.data() as CloudStorePayload
-      if (data.version !== 3 || !Array.isArray(data.projects)) return
+      if (!isValidPayload(data)) return
       onRemote(data)
     },
     (err) => onError(err),
@@ -156,7 +136,7 @@ export function subscribeCloudStore(
 
 export function toAppStore(payload: CloudStorePayload): AppStore {
   return {
-    version: 3,
+    version: 4,
     projects: payload.projects,
     activeProjectId: payload.activeProjectId,
   }
@@ -186,7 +166,7 @@ export function mergeStoresByProjectId(
         : null
 
   return {
-    version: 3,
+    version: 4,
     projects,
     activeProjectId,
   }
@@ -196,41 +176,6 @@ export function projectIdsEqual(a: AppStore, b: AppStore): boolean {
   if (a.projects.length !== b.projects.length) return false
   const ids = new Set(a.projects.map((p) => p.id))
   return b.projects.every((p) => ids.has(p.id))
-}
-
-/**
- * 클라우드에서 받은 store를 로컬에 적용할 때, 로컬에만 있는 영수증(base64)을
- * 같은 expense id에 대해 보존한다. (클라우드 페이로드가 영수증을 비운 경우 대비)
- */
-export function mergePreservingLocalReceipts(
-  remote: AppStore,
-  local: AppStore,
-): AppStore {
-  const localReceipts = new Map<string, { receiptDataUrl: string; receiptFileName: string }>()
-  for (const p of local.projects) {
-    for (const e of p.expenses) {
-      if (e.receiptDataUrl) {
-        localReceipts.set(e.id, {
-          receiptDataUrl: e.receiptDataUrl,
-          receiptFileName: e.receiptFileName ?? '',
-        })
-      }
-    }
-  }
-  if (localReceipts.size === 0) return remote
-
-  return {
-    ...remote,
-    projects: remote.projects.map((p) => ({
-      ...p,
-      expenses: p.expenses.map((e) => {
-        if (e.receiptDataUrl) return e
-        const kept = localReceipts.get(e.id)
-        if (!kept) return e
-        return { ...e, ...kept }
-      }),
-    })),
-  }
 }
 
 /**
@@ -276,9 +221,6 @@ export async function resolveInitialStore(
   }
 
   const remoteStore = toAppStore(remote)
-  // 로컬에 미동기화 변경이 있으면 로컬을 우선 기준으로 삼는다.
-  // (이전에는 localMeta만 비교해서, 동기화 끊긴 동안 추가한 프로젝트가
-  //  오래된 클라우드 데이터로 통째로 덮어써지는 문제가 있었다.)
   const preferLocal = shouldPreferLocalStore({
     localHasData,
     dirtyAt,
@@ -293,10 +235,7 @@ export async function resolveInitialStore(
   }
 
   if (preferLocal) {
-    const merged = mergePreservingLocalReceipts(
-      mergeStoresByProjectId(localStore, remoteStore),
-      localStore,
-    )
+    const merged = mergeStoresByProjectId(localStore, remoteStore)
     const pushedAt = await pushCloudStore(uid, merged)
     return {
       store: merged,
@@ -305,13 +244,9 @@ export async function resolveInitialStore(
     }
   }
 
-  const merged = mergePreservingLocalReceipts(
-    mergeStoresByProjectId(remoteStore, localStore),
-    localStore,
-  )
+  const merged = mergeStoresByProjectId(remoteStore, localStore)
   setLocalSyncMeta(remote.updatedAt)
 
-  // 클라우드가 기준이어도 로컬에만 있던 프로젝트는 살려 두고, 클라우드에 다시 올린다.
   if (!projectIdsEqual(merged, remoteStore)) {
     const pushedAt = await pushCloudStore(uid, merged)
     return { store: merged, source: 'merged', pushedAt }
