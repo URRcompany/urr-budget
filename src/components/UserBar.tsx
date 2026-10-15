@@ -11,11 +11,11 @@ function SyncIndicator({ compact }: { compact: boolean }) {
   if (!enabled) return null
 
   const labels: Record<string, string> = {
-    idle: '동기화 대기',
-    syncing: '동기화 중…',
-    synced: '동기화됨',
-    error: '동기화 오류',
-    needs_reauth: '재로그인 필요',
+    idle: '저장 대기',
+    syncing: '저장 중…',
+    synced: '저장됨',
+    error: '저장 오류',
+    needs_reauth: '다시 로그인',
   }
 
   const Icon =
@@ -41,7 +41,7 @@ function SyncIndicator({ compact }: { compact: boolean }) {
       aria-label={title}
     >
       <Icon size={compact ? 13 : 14} className={status === 'syncing' ? 'spin' : undefined} />
-      {!compact && <span>{labels[status]}</span>}
+      <span>{labels[status]}</span>
     </span>
   )
 }

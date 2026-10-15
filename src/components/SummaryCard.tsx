@@ -17,20 +17,17 @@ export function SummaryCard({ profitLabel, totals }: SummaryCardProps) {
           {formatKRW(totals.profit)}
         </strong>
       </div>
-      <div className="summary__flow">
+      <dl className="summary__flow">
         <div>
-          <span className="summary__label">수입</span>
-          <strong className="tabular-nums">{formatKRW(totals.income)}</strong>
+          <dt className="summary__label">들어온 돈</dt>
+          <dd className="summary__in tabular-nums">+{formatKRW(totals.income)}</dd>
         </div>
-        <span className="summary__minus" aria-hidden>
-          −
-        </span>
         <div>
-          <span className="summary__label">지출</span>
-          <strong className="tabular-nums">{formatKRW(totals.expense)}</strong>
+          <dt className="summary__label">나간 돈</dt>
+          <dd className="summary__out tabular-nums">−{formatKRW(totals.expense)}</dd>
         </div>
-      </div>
-      <ul className="summary__breakdown">
+      </dl>
+      <ul className="summary__breakdown" aria-label="나간 돈 내역">
         <li>
           <span>인건비</span>
           <strong className="tabular-nums">{formatKRW(totals.labor)}</strong>

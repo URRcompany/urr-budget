@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, FolderPlus } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, FolderPlus } from 'lucide-react'
 import type { Project } from '../types'
 import {
   formatMonthLabel,
   monthKey,
   monthTotals,
-  projectTotals,
+  projectMonthTotals,
   shiftMonth,
+  type Totals,
 } from '../lib/money'
-import { formatKRW } from '../lib/format'
+import { formatCompactKRW, formatKRW } from '../lib/format'
 import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 import { BackupControls } from './BackupControls'
@@ -28,6 +29,44 @@ interface HomeViewProps {
   ) => Promise<{ ok: boolean; error?: string; projectCount?: number }>
 }
 
+function ProjectRow({
+  project,
+  totals,
+  onOpen,
+}: {
+  project: Project
+  totals: Totals | null
+  onOpen: (id: string) => void
+}) {
+  return (
+    <li>
+      <button type="button" className="project-row" onClick={() => onOpen(project.id)}>
+        <span className="project-row__name">
+          <strong>{project.name}</strong>
+          {project.client && <span className="muted">{project.client}</span>}
+        </span>
+        {totals ? (
+          <>
+            <span className="project-row__flow tabular-nums">
+              <span className="amount-in">+{formatCompactKRW(totals.income)}</span>
+              <span className="muted"> / </span>
+              <span>−{formatCompactKRW(totals.expense)}</span>
+            </span>
+            <strong
+              className={`project-row__profit tabular-nums ${totals.profit < 0 ? 'amount-loss' : ''}`}
+            >
+              {formatKRW(totals.profit)}
+            </strong>
+          </>
+        ) : (
+          <span className="project-row__flow muted">이 달 기록 없음</span>
+        )}
+        <ChevronRight size={18} className="project-row__go" aria-hidden />
+      </button>
+    </li>
+  )
+}
+
 export function HomeView({
   projects,
   month,
@@ -38,9 +77,21 @@ export function HomeView({
   onImportBackup,
 }: HomeViewProps) {
   const [creating, setCreating] = useState(false)
+  const [showIdle, setShowIdle] = useState(false)
   const totals = monthTotals(projects, month)
   const isCurrentMonth = month === monthKey()
   const monthNum = Number(month.split('-')[1])
+  const monthWord = isCurrentMonth ? '이번 달' : `${monthNum}월`
+
+  const active: { project: Project; totals: Totals }[] = []
+  const idle: Project[] = []
+  for (const p of projects) {
+    if (p.entries.some((e) => e.date.startsWith(month))) {
+      active.push({ project: p, totals: projectMonthTotals(p, month) })
+    } else {
+      idle.push(p)
+    }
+  }
 
   return (
     <div className="shell">
@@ -78,14 +129,11 @@ export function HomeView({
         )}
       </nav>
 
-      <SummaryCard
-        profitLabel={isCurrentMonth ? '이번 달 수익' : `${monthNum}월 수익`}
-        totals={totals}
-      />
+      <SummaryCard profitLabel={`${monthWord} 수익`} totals={totals} />
 
       <section className="panel">
         <header className="panel__head">
-          <h2>프로젝트</h2>
+          <h2>{monthWord} 프로젝트</h2>
           <button
             type="button"
             className="btn btn--primary btn--sm"
@@ -99,47 +147,45 @@ export function HomeView({
         {projects.length === 0 ? (
           <div className="empty">
             <p>아직 프로젝트가 없습니다.</p>
-            <p className="muted">프로젝트를 만들고 수입·인건비·지출을 입력하세요.</p>
+            <p className="muted">「새 프로젝트」를 눌러 시작하세요.</p>
           </div>
         ) : (
-          <ul className="project-list">
-            {projects.map((p) => {
-              const t = projectTotals(p)
-              return (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    className="project-row"
-                    onClick={() => onOpen(p.id)}
-                  >
-                    <div className="project-row__name">
-                      <strong>{p.name}</strong>
-                      {p.client && <span className="muted">{p.client}</span>}
-                    </div>
-                    <dl className="project-row__nums">
-                      <div>
-                        <dt>수입</dt>
-                        <dd className="tabular-nums">{formatKRW(t.income)}</dd>
-                      </div>
-                      <div>
-                        <dt>인건비</dt>
-                        <dd className="tabular-nums">{formatKRW(t.labor)}</dd>
-                      </div>
-                      <div>
-                        <dt>수익</dt>
-                        <dd
-                          className={`tabular-nums ${t.profit < 0 ? 'danger' : 'profit'}`}
-                        >
-                          {formatKRW(t.profit)}
-                        </dd>
-                      </div>
-                    </dl>
-                    <ChevronRight size={18} className="project-row__go" aria-hidden />
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          <>
+            {active.length === 0 ? (
+              <p className="panel__empty muted">{monthWord}에 기록된 프로젝트가 없습니다.</p>
+            ) : (
+              <ul className="project-list">
+                {active.map(({ project, totals: t }) => (
+                  <ProjectRow key={project.id} project={project} totals={t} onOpen={onOpen} />
+                ))}
+              </ul>
+            )}
+
+            {idle.length > 0 && (
+              <div className="idle-projects">
+                <button
+                  type="button"
+                  className="idle-projects__toggle"
+                  aria-expanded={showIdle}
+                  onClick={() => setShowIdle((v) => !v)}
+                >
+                  기록 없는 프로젝트 {idle.length}개
+                  <ChevronDown
+                    size={16}
+                    className={showIdle ? 'icon-rotated' : undefined}
+                    aria-hidden
+                  />
+                </button>
+                {showIdle && (
+                  <ul className="project-list">
+                    {idle.map((p) => (
+                      <ProjectRow key={p.id} project={p} totals={null} onOpen={onOpen} />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </>
         )}
       </section>
 
