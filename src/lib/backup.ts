@@ -25,9 +25,12 @@ export type BackupParseResult =
 /** 백업 JSON 파싱 (구조 검증만, 정규화는 useStore에서) */
 export function parseStoreBackup(raw: string): BackupParseResult {
   try {
-    const parsed = JSON.parse(raw) as Partial<AppStore>
-    if (parsed?.version !== 3) {
-      return { ok: false, error: '지원하지 않는 백업 버전입니다. (v3 필요)' }
+    const parsed = JSON.parse(raw) as Partial<AppStore> & { version?: number }
+    if (parsed?.version !== 4) {
+      return {
+        ok: false,
+        error: '이전 버전 백업은 가져올 수 없습니다. (개편 후 만든 백업만 지원)',
+      }
     }
     if (!Array.isArray(parsed.projects)) {
       return { ok: false, error: '프로젝트 목록이 없습니다.' }
@@ -35,7 +38,7 @@ export function parseStoreBackup(raw: string): BackupParseResult {
     return {
       ok: true,
       store: {
-        version: 3,
+        version: 4,
         projects: parsed.projects,
         activeProjectId:
           typeof parsed.activeProjectId === 'string' ? parsed.activeProjectId : null,

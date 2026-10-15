@@ -16,16 +16,40 @@ export function formatCompactKRW(amount: number): string {
   return amount.toLocaleString('ko-KR')
 }
 
-export function formatDate(iso: string): string {
-  if (!iso) return '—'
-  const d = new Date(iso + 'T00:00:00')
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(d)
+/** 1234567 → "123만 4,567원", 800000 → "80만 원" */
+export function formatKoreanAmount(amount: number): string {
+  const n = Math.max(0, Math.round(amount))
+  if (n === 0) return '0원'
+  const eok = Math.floor(n / 100_000_000)
+  const man = Math.floor((n % 100_000_000) / 10_000)
+  const rest = n % 10_000
+  const parts: string[] = []
+  if (eok) parts.push(`${eok.toLocaleString('ko-KR')}억`)
+  if (man) parts.push(`${man.toLocaleString('ko-KR')}만`)
+  if (rest) parts.push(rest.toLocaleString('ko-KR'))
+  return rest ? `${parts.join(' ')}원` : `${parts.join(' ')} 원`
 }
 
-export function uid(): string {
-  return `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+/** 2026-03-15 → 3월 15일 */
+export function formatShortDate(iso: string): string {
+  if (!iso) return '—'
+  const [, m, d] = iso.split('-').map(Number)
+  if (!m || !d) return iso
+  return `${m}월 ${d}일`
+}
+
+/** 입력값에서 숫자만 추출 */
+export function parseAmount(raw: string): number {
+  const digits = raw.replace(/[^\d]/g, '')
+  return digits ? Number(digits) : 0
+}
+
+/** 입력 중 천 단위 콤마 */
+export function formatAmountInput(raw: string): string {
+  const n = parseAmount(raw)
+  return n ? n.toLocaleString('ko-KR') : ''
+}
+
+export function uid(prefix = 'e'): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
 }
