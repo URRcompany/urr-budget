@@ -1,13 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import type { ProjectDraft } from '../types'
 
 interface ProjectFormModalProps {
   open: boolean
   title: string
   submitLabel: string
-  initial?: { name: string; client: string }
+  initial?: ProjectDraft
   onClose: () => void
-  onSubmit: (data: { name: string; client: string }) => void
+  onSubmit: (data: ProjectDraft) => void
 }
 
 export function ProjectFormModal({
@@ -20,17 +21,20 @@ export function ProjectFormModal({
 }: ProjectFormModalProps) {
   const [name, setName] = useState('')
   const [client, setClient] = useState('')
+  const [date, setDate] = useState('')
   const [error, setError] = useState('')
 
   const initialName = initial?.name ?? ''
   const initialClient = initial?.client ?? ''
+  const initialDate = initial?.date ?? ''
 
   useEffect(() => {
     if (!open) return
     setName(initialName)
     setClient(initialClient)
+    setDate(initialDate)
     setError('')
-  }, [open, initialName, initialClient])
+  }, [open, initialName, initialClient, initialDate])
 
   useEffect(() => {
     if (!open) return
@@ -49,7 +53,7 @@ export function ProjectFormModal({
       setError('프로젝트 이름을 입력하세요.')
       return
     }
-    onSubmit({ name, client })
+    onSubmit({ name, client, date })
     onClose()
   }
 
@@ -77,6 +81,12 @@ export function ProjectFormModal({
               onChange={(e) => setName(e.target.value)}
               autoFocus
             />
+          </label>
+          <label className="field">
+            <span>
+              날짜<em className="field__opt"> (선택)</em>
+            </span>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
           <label className="field">
             <span>

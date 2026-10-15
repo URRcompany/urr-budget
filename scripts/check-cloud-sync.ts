@@ -11,7 +11,7 @@ import {
 import type { AppStore, Project } from '../src/types'
 
 function project(id: string, name: string): Project {
-  return { id, name, client: '', entries: [], createdAt: '2026-01-01T00:00:00.000Z' }
+  return { id, name, client: '', date: '', entries: [], createdAt: '2026-01-01T00:00:00.000Z' }
 }
 
 // —— 데이터 유실 방지: 프로젝트 ID 병합 ——

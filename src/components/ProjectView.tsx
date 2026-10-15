@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
-import { ENTRY_KIND_LABEL, type Entry, type EntryKind, type Project } from '../types'
+import { ENTRY_KIND_LABEL, type Entry, type EntryKind, type Project, type ProjectDraft } from '../types'
 import type { EntryInput } from '../hooks/useStore'
 import { groupEntriesByDate, laborByPerson, projectTotals } from '../lib/money'
 import { formatCompactKRW, formatKRW, formatShortDate } from '../lib/format'
@@ -16,7 +16,7 @@ const FILTERS: Filter[] = ['all', 'income', 'labor', 'equipment', 'misc']
 interface ProjectViewProps {
   project: Project
   onBack: () => void
-  onUpdate: (data: { name: string; client: string }) => void
+  onUpdate: (data: ProjectDraft) => void
   onDelete: () => void
   onAddEntry: (data: EntryInput) => void
   onUpdateEntry: (id: string, data: EntryInput) => void
@@ -65,13 +65,19 @@ export function ProjectView({
       <section className="project-head">
         <div className="project-head__text">
           <h1>{project.name}</h1>
-          {project.client && <p className="muted">{project.client}</p>}
+          {(project.date || project.client) && (
+            <p className="muted">
+              {[project.date ? formatShortDate(project.date) : '', project.client]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
         </div>
         <div className="project-head__actions">
           <button
             type="button"
             className="icon-btn"
-            aria-label="프로젝트 이름 수정"
+            aria-label="프로젝트 수정"
             onClick={() => setEditingProject(true)}
           >
             <Pencil size={17} />
@@ -201,7 +207,7 @@ export function ProjectView({
         open={editingProject}
         title="프로젝트 수정"
         submitLabel="저장"
-        initial={{ name: project.name, client: project.client }}
+        initial={{ name: project.name, client: project.client, date: project.date }}
         onClose={closeProjectEdit}
         onSubmit={onUpdate}
       />

@@ -9,9 +9,15 @@ import {
   monthTotals,
   projectMonthTotals,
   projectTotals,
+  projectTouchesMonth,
   shiftMonth,
 } from '../src/lib/money'
-import { parseAmount, formatAmountInput, formatKoreanAmount } from '../src/lib/format'
+import {
+  parseAmount,
+  formatAmountInput,
+  formatKoreanAmount,
+  normalizeISODate,
+} from '../src/lib/format'
 import type { Entry, Project } from '../src/types'
 
 let n = 0
@@ -24,6 +30,7 @@ const cf: Project = {
   id: 'p1',
   name: 'CF',
   client: 'ABC',
+  date: '',
   createdAt: '2026-01-01T00:00:00.000Z',
   entries: [
     entry({ kind: 'income', title: '계약금', amount: 3_000_000, date: '2026-09-20' }),
@@ -40,6 +47,7 @@ const mv: Project = {
   id: 'p2',
   name: 'MV',
   client: '',
+  date: '2026-11-02',
   createdAt: '2026-01-01T00:00:00.000Z',
   entries: [
     entry({ kind: 'income', title: '', amount: 1_500_000, date: '2026-10-28' }),
@@ -90,5 +98,12 @@ assert.equal(formatKoreanAmount(800_000), '80만 원')
 assert.equal(formatKoreanAmount(1_234_567), '123만 4,567원')
 assert.equal(formatKoreanAmount(150_000_000), '1억 5,000만 원')
 assert.equal(formatKoreanAmount(9_000), '9,000원')
+
+assert.equal(normalizeISODate('2026-11-02'), '2026-11-02')
+assert.equal(normalizeISODate('2026-02-31'), '')
+assert.equal(normalizeISODate(''), '')
+assert.equal(projectTouchesMonth(mv, '2026-11'), true)
+assert.equal(projectTouchesMonth(mv, '2026-12'), false)
+assert.equal(projectTouchesMonth({ ...mv, date: '2026-12-01', entries: [] }, '2026-12'), true)
 
 console.log('check-money: ok')

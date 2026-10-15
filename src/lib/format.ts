@@ -30,6 +30,15 @@ export function formatKoreanAmount(amount: number): string {
   return rest ? `${parts.join(' ')}원` : `${parts.join(' ')} 원`
 }
 
+/** 달력에 있는 YYYY-MM-DD만 남긴다. 그 외는 빈 문자열 */
+export function normalizeISODate(raw: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return ''
+  const [y, m, d] = raw.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return ''
+  return raw
+}
+
 /** 2026-03-15 → 3월 15일 */
 export function formatShortDate(iso: string): string {
   if (!iso) return '—'
