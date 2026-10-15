@@ -4,13 +4,14 @@
  */
 import assert from 'node:assert/strict'
 import {
+  groupEntriesByDate,
   laborByPerson,
   monthTotals,
   projectMonthTotals,
   projectTotals,
   shiftMonth,
 } from '../src/lib/money'
-import { parseAmount, formatAmountInput } from '../src/lib/format'
+import { parseAmount, formatAmountInput, formatKoreanAmount } from '../src/lib/format'
 import type { Entry, Project } from '../src/types'
 
 let n = 0
@@ -77,5 +78,17 @@ assert.equal(shiftMonth('2026-12', 1), '2027-01')
 assert.equal(parseAmount('1,200,000원'), 1_200_000)
 assert.equal(formatAmountInput('1200000'), '1,200,000')
 assert.equal(formatAmountInput('abc'), '')
+
+const groups = groupEntriesByDate(cf.entries)
+assert.equal(groups[0].date, '2026-10-15')
+assert.equal(groups[1].date, '2026-10-03')
+assert.equal(groups[2].date, '2026-10-02')
+assert.equal(groups[2].entries.length, 4)
+assert.equal(groups[groups.length - 1].date, '2026-09-20')
+
+assert.equal(formatKoreanAmount(800_000), '80만 원')
+assert.equal(formatKoreanAmount(1_234_567), '123만 4,567원')
+assert.equal(formatKoreanAmount(150_000_000), '1억 5,000만 원')
+assert.equal(formatKoreanAmount(9_000), '9,000원')
 
 console.log('check-money: ok')

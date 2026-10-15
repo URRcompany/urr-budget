@@ -16,6 +16,20 @@ export function formatCompactKRW(amount: number): string {
   return amount.toLocaleString('ko-KR')
 }
 
+/** 1234567 → "123만 4,567원", 800000 → "80만 원" */
+export function formatKoreanAmount(amount: number): string {
+  const n = Math.max(0, Math.round(amount))
+  if (n === 0) return '0원'
+  const eok = Math.floor(n / 100_000_000)
+  const man = Math.floor((n % 100_000_000) / 10_000)
+  const rest = n % 10_000
+  const parts: string[] = []
+  if (eok) parts.push(`${eok.toLocaleString('ko-KR')}억`)
+  if (man) parts.push(`${man.toLocaleString('ko-KR')}만`)
+  if (rest) parts.push(rest.toLocaleString('ko-KR'))
+  return rest ? `${parts.join(' ')}원` : `${parts.join(' ')} 원`
+}
+
 /** 2026-03-15 → 3월 15일 */
 export function formatShortDate(iso: string): string {
   if (!iso) return '—'

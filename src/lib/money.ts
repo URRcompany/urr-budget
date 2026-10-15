@@ -1,4 +1,4 @@
-import type { Entry, EntryKind, Project } from '../types'
+import type { Entry, Project } from '../types'
 
 export interface Totals {
   income: number
@@ -25,12 +25,6 @@ export function projectTotals(project: Project): Totals {
   return sumEntries(project.entries)
 }
 
-export function entriesOfKind(project: Project, kind: EntryKind): Entry[] {
-  return project.entries
-    .filter((e) => e.kind === kind)
-    .sort((a, b) => b.date.localeCompare(a.date))
-}
-
 /** 인건비 사람별 합계 (같은 이름은 합산, 금액 큰 순) */
 export function laborByPerson(project: Project): { name: string; amount: number; count: number }[] {
   const map = new Map<string, { name: string; amount: number; count: number }>()
@@ -43,6 +37,24 @@ export function laborByPerson(project: Project): { name: string; amount: number;
     map.set(name, row)
   }
   return [...map.values()].sort((a, b) => b.amount - a.amount)
+}
+
+/** 날짜 최신순으로 묶음 (같은 날 안에서는 수입 먼저) */
+export function groupEntriesByDate(entries: Entry[]): { date: string; entries: Entry[] }[] {
+  const sorted = entries.slice().sort((a, b) => {
+    const byDate = b.date.localeCompare(a.date)
+    if (byDate !== 0) return byDate
+    if (a.kind === 'income' && b.kind !== 'income') return -1
+    if (b.kind === 'income' && a.kind !== 'income') return 1
+    return 0
+  })
+  const groups: { date: string; entries: Entry[] }[] = []
+  for (const e of sorted) {
+    const last = groups[groups.length - 1]
+    if (last && last.date === e.date) last.entries.push(e)
+    else groups.push({ date: e.date, entries: [e] })
+  }
+  return groups
 }
 
 /** 로컬 날짜 기준 YYYY-MM-DD */
