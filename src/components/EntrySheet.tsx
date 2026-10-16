@@ -99,7 +99,7 @@ export function EntrySheet({ open, entry, onClose, onSubmit, onDelete }: EntrySh
     onSubmit({
       kind,
       title: title.trim(),
-      role: kind === 'labor' ? role.trim() : undefined,
+      ...(kind === 'labor' ? { role: role.trim() } : {}),
       amount: amountNum,
       date,
     })

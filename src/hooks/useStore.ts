@@ -27,14 +27,16 @@ const ENTRY_KINDS = new Set<EntryKind>(['income', 'labor', 'equipment', 'misc'])
 function normalizeEntry(raw: Partial<Entry>): Entry | null {
   if (!raw || !raw.kind || !ENTRY_KINDS.has(raw.kind)) return null
   const amount = Math.max(0, Math.round(Number(raw.amount) || 0))
-  return {
+  const entry: Entry = {
     id: raw.id || uid(),
     kind: raw.kind,
     title: String(raw.title ?? '').trim(),
-    role: raw.kind === 'labor' ? String(raw.role ?? '').trim() : undefined,
     amount,
     date: typeof raw.date === 'string' ? raw.date : '',
   }
+  // Firestore는 undefined 값을 거절한다. 인건비가 아니면 role 키 자체를 두지 않는다.
+  if (raw.kind === 'labor') entry.role = String(raw.role ?? '').trim()
+  return entry
 }
 
 function normalizeProject(raw: Partial<Project>): Project | null {
