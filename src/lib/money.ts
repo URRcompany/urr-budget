@@ -80,6 +80,12 @@ export function formatMonthLabel(key: string): string {
   return `${y}년 ${m}월`
 }
 
+/** 프로젝트 날짜가 그 달이거나, 그 달에 기록이 있으면 홈 목록에 올린다 */
+export function projectTouchesMonth(project: Project, month: string): boolean {
+  if (project.date.startsWith(month)) return true
+  return project.entries.some((e) => e.date.startsWith(month))
+}
+
 export function monthTotals(projects: Project[], month: string): Totals {
   return sumEntries(
     projects.flatMap((p) => p.entries.filter((e) => e.date.startsWith(month))),

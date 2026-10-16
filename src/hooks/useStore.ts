@@ -5,8 +5,9 @@ import {
   type Entry,
   type EntryKind,
   type Project,
+  type ProjectDraft,
 } from '../types'
-import { uid } from '../lib/format'
+import { normalizeISODate, uid } from '../lib/format'
 import { monthKey } from '../lib/money'
 import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
@@ -42,6 +43,7 @@ function normalizeProject(raw: Partial<Project>): Project | null {
     id: raw.id,
     name: String(raw.name ?? '').trim() || '새 프로젝트',
     client: String(raw.client ?? '').trim(),
+    date: normalizeISODate(typeof raw.date === 'string' ? raw.date : ''),
     createdAt: raw.createdAt ?? new Date().toISOString(),
     entries: (Array.isArray(raw.entries) ? raw.entries : [])
       .map((e) => normalizeEntry(e))
@@ -110,11 +112,12 @@ export function useStore() {
     setStore((s) => ({ ...s, activeProjectId: null }))
   }, [])
 
-  const createProject = useCallback((input: { name: string; client: string }) => {
+  const createProject = useCallback((input: ProjectDraft) => {
     const project: Project = {
       id: uid('p'),
       name: input.name.trim() || '새 프로젝트',
       client: input.client.trim(),
+      date: normalizeISODate(input.date),
       entries: [],
       createdAt: new Date().toISOString(),
     }
@@ -126,11 +129,12 @@ export function useStore() {
   }, [])
 
   const updateProject = useCallback(
-    (id: string, patch: { name: string; client: string }) => {
+    (id: string, patch: ProjectDraft) => {
       patchProject(id, (p) => ({
         ...p,
         name: patch.name.trim() || p.name,
         client: patch.client.trim(),
+        date: normalizeISODate(patch.date),
       }))
     },
     [patchProject],

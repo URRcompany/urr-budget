@@ -40,6 +40,7 @@ async function main() {
         id: 'p1',
         name: '에뮬 프로젝트',
         client: '',
+        date: '2026-10-01',
         createdAt: new Date().toISOString(),
         entries: [
           { id: 'e1', kind: 'income', title: '계약금', amount: 1_000_000, date: '2026-10-01' },

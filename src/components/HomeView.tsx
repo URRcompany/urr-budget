@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, FolderPlus } from 'lucide-react'
-import type { Project } from '../types'
+import type { Project, ProjectDraft } from '../types'
 import {
   formatMonthLabel,
   monthKey,
   monthTotals,
   projectMonthTotals,
+  projectTouchesMonth,
   shiftMonth,
+  todayISO,
   type Totals,
 } from '../lib/money'
-import { formatCompactKRW, formatKRW } from '../lib/format'
+import { formatCompactKRW, formatKRW, formatShortDate } from '../lib/format'
 import { AppBrand } from './AppBrand'
 import { UserBar } from './UserBar'
 import { BackupControls } from './BackupControls'
@@ -21,7 +23,7 @@ interface HomeViewProps {
   month: string
   onMonthChange: (month: string) => void
   onOpen: (id: string) => void
-  onCreate: (data: { name: string; client: string }) => void
+  onCreate: (data: ProjectDraft) => void
   onExportBackup: () => void
   onImportBackup: (
     file: File,
@@ -43,7 +45,13 @@ function ProjectRow({
       <button type="button" className="project-row" onClick={() => onOpen(project.id)}>
         <span className="project-row__name">
           <strong>{project.name}</strong>
-          {project.client && <span className="muted">{project.client}</span>}
+          {(project.date || project.client) && (
+            <span className="muted">
+              {[project.date ? formatShortDate(project.date) : '', project.client]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+          )}
         </span>
         {totals ? (
           <>
@@ -83,11 +91,12 @@ export function HomeView({
   const monthNum = Number(month.split('-')[1])
   const monthWord = isCurrentMonth ? '이번 달' : `${monthNum}월`
 
-  const active: { project: Project; totals: Totals }[] = []
+  const active: { project: Project; totals: Totals | null }[] = []
   const idle: Project[] = []
   for (const p of projects) {
-    if (p.entries.some((e) => e.date.startsWith(month))) {
-      active.push({ project: p, totals: projectMonthTotals(p, month) })
+    if (projectTouchesMonth(p, month)) {
+      const hasEntries = p.entries.some((e) => e.date.startsWith(month))
+      active.push({ project: p, totals: hasEntries ? projectMonthTotals(p, month) : null })
     } else {
       idle.push(p)
     }
@@ -197,6 +206,7 @@ export function HomeView({
         open={creating}
         title="새 프로젝트"
         submitLabel="만들기"
+        initial={{ name: '', client: '', date: todayISO() }}
         onClose={() => setCreating(false)}
         onSubmit={onCreate}
       />

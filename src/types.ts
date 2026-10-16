@@ -27,8 +27,16 @@ export interface Project {
   id: string
   name: string
   client: string
+  /** YYYY-MM-DD. 비어 있으면 날짜 없음 */
+  date: string
   entries: Entry[]
   createdAt: string
+}
+
+export interface ProjectDraft {
+  name: string
+  client: string
+  date: string
 }
 
 export interface AppStore {
