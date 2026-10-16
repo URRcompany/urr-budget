@@ -84,10 +84,23 @@ function isValidPayload(data: Partial<CloudStorePayload> | undefined): data is C
   return data?.version === 4 && Array.isArray(data.projects)
 }
 
+/** Firestore setDoc은 undefined 필드가 있으면 저장 전체를 거절한다. */
+export function omitUndefined<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => omitUndefined(item)) as T
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (child !== undefined) out[key] = omitUndefined(child)
+    }
+    return out as T
+  }
+  return value
+}
+
 function buildPayload(store: AppStore, updatedAt: number): CloudStorePayload {
   return {
     version: 4,
-    projects: store.projects,
+    projects: omitUndefined(store.projects),
     activeProjectId: store.activeProjectId,
     updatedAt,
     updatedAtServer: serverTimestamp() as unknown as Timestamp,

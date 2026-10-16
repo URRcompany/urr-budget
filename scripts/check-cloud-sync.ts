@@ -5,10 +5,12 @@
 import assert from 'node:assert/strict'
 import {
   mergeStoresByProjectId,
+  omitUndefined,
   projectIdsEqual,
   shouldPreferLocalStore,
 } from '../src/lib/cloudSync'
-import type { AppStore, Project } from '../src/types'
+import { normalizeStore } from '../src/hooks/useStore'
+import type { AppStore, Entry, Project } from '../src/types'
 
 function project(id: string, name: string): Project {
   return { id, name, client: '', date: '', entries: [], createdAt: '2026-01-01T00:00:00.000Z' }
@@ -56,5 +58,38 @@ assert.equal(
   }),
   true,
 )
+
+const withUndefined = omitUndefined({
+  projects: [
+    {
+      entries: [
+        { kind: 'income', title: '계약금', role: undefined, amount: 1 },
+        { kind: 'labor', title: '김촬영', role: '촬영', amount: 1 },
+      ],
+    },
+  ],
+})
+assert.equal('role' in withUndefined.projects[0].entries[0], false)
+assert.equal(withUndefined.projects[0].entries[1].role, '촬영')
+
+const normalized = normalizeStore({
+  version: 4,
+  activeProjectId: null,
+  projects: [
+    {
+      id: 'p1',
+      name: 'CF',
+      client: '',
+      date: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      entries: [
+        { id: 'e1', kind: 'income', title: '계약금', amount: 1000, date: '2026-10-16' },
+        { id: 'e2', kind: 'labor', title: '김촬영', role: '촬영', amount: 500, date: '2026-10-16' },
+      ] as Entry[],
+    },
+  ],
+})
+assert.equal('role' in normalized.projects[0].entries[0], false)
+assert.equal(normalized.projects[0].entries[1].role, '촬영')
 
 console.log('check-cloud-sync: ok')
