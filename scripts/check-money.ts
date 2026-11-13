@@ -31,6 +31,9 @@ const cf: Project = {
   name: 'CF',
   client: 'ABC',
   date: '',
+  amount: 5_000_000,
+  dueDate: '',
+  memo: '',
   createdAt: '2026-01-01T00:00:00.000Z',
   entries: [
     entry({ kind: 'income', title: '계약금', amount: 3_000_000, date: '2026-09-20' }),
@@ -48,6 +51,9 @@ const mv: Project = {
   name: 'MV',
   client: '',
   date: '2026-11-02',
+  amount: 1_500_000,
+  dueDate: '',
+  memo: '',
   createdAt: '2026-01-01T00:00:00.000Z',
   entries: [
     entry({ kind: 'income', title: '', amount: 1_500_000, date: '2026-10-28' }),

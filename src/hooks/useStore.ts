@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   createEmptyStore,
   type AppStore,
   type Entry,
   type EntryKind,
   type Project,
-  type ProjectDraft,
 } from '../types'
 import { normalizeISODate, uid } from '../lib/format'
-import { monthKey } from '../lib/money'
 import { downloadStoreBackup, readBackupFile } from '../lib/backup'
 
 const STORAGE_KEY = 'reelbudget.store.v4'
@@ -35,21 +33,37 @@ function normalizeEntry(raw: Partial<Entry>): Entry | null {
     date: typeof raw.date === 'string' ? raw.date : '',
   }
   // Firestore는 undefined 값을 거절한다. 인건비가 아니면 role 키 자체를 두지 않는다.
-  if (raw.kind === 'labor') entry.role = String(raw.role ?? '').trim()
+  if (raw.kind === 'labor') {
+    entry.role = String(raw.role ?? '').trim()
+    // 개편 전 기록은 '나간 돈'이었으므로 지급한 것으로 본다.
+    entry.paid = raw.paid === undefined ? true : Boolean(raw.paid)
+  }
   return entry
 }
 
 function normalizeProject(raw: Partial<Project>): Project | null {
   if (!raw || !raw.id) return null
+  const entries = (Array.isArray(raw.entries) ? raw.entries : [])
+    .map((e) => normalizeEntry(e))
+    .filter((e): e is Entry => e !== null)
+  // 개편 전 프로젝트엔 받을 금액이 없다 → 받은 돈 합계를 받을 금액으로 본다.
+  const legacyAmount = entries
+    .filter((e) => e.kind === 'income')
+    .reduce((sum, e) => sum + e.amount, 0)
+  const amount =
+    raw.amount === undefined || raw.amount === null
+      ? legacyAmount
+      : Math.max(0, Math.round(Number(raw.amount) || 0))
   return {
     id: raw.id,
     name: String(raw.name ?? '').trim() || '새 프로젝트',
     client: String(raw.client ?? '').trim(),
     date: normalizeISODate(typeof raw.date === 'string' ? raw.date : ''),
+    amount,
+    dueDate: normalizeISODate(typeof raw.dueDate === 'string' ? raw.dueDate : ''),
+    memo: String(raw.memo ?? '').trim(),
     createdAt: raw.createdAt ?? new Date().toISOString(),
-    entries: (Array.isArray(raw.entries) ? raw.entries : [])
-      .map((e) => normalizeEntry(e))
-      .filter((e): e is Entry => e !== null),
+    entries,
   }
 }
 
@@ -82,7 +96,6 @@ export type EntryInput = Omit<Entry, 'id'>
 
 export function useStore() {
   const [store, setStore] = useState<AppStore>(loadStore)
-  const [month, setMonth] = useState(monthKey)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -90,11 +103,6 @@ export function useStore() {
     }, 300)
     return () => window.clearTimeout(timer)
   }, [store])
-
-  const activeProject = useMemo(
-    () => store.projects.find((p) => p.id === store.activeProjectId) ?? null,
-    [store],
-  )
 
   const patchProject = useCallback(
     (projectId: string, updater: (p: Project) => Project) => {
@@ -106,37 +114,42 @@ export function useStore() {
     [],
   )
 
-  const openProject = useCallback((id: string) => {
-    setStore((s) => ({ ...s, activeProjectId: id }))
+  const saveProject = useCallback((input: Project) => {
+    const project = normalizeProject(input)
+    if (!project) return
+    setStore((s) => {
+      const exists = s.projects.some((p) => p.id === project.id)
+      return {
+        ...s,
+        projects: exists
+          ? s.projects.map((p) => (p.id === project.id ? project : p))
+          : [project, ...s.projects],
+      }
+    })
   }, [])
 
-  const closeProject = useCallback(() => {
-    setStore((s) => ({ ...s, activeProjectId: null }))
-  }, [])
+  const addPayment = useCallback(
+    (projectId: string, payment: { date: string; amount: number; memo: string }) => {
+      const entry = normalizeEntry({
+        id: uid(),
+        kind: 'income',
+        title: payment.memo,
+        amount: payment.amount,
+        date: payment.date,
+      })
+      if (!entry) return
+      patchProject(projectId, (p) => ({ ...p, entries: [...p.entries, entry] }))
+    },
+    [patchProject],
+  )
 
-  const createProject = useCallback((input: ProjectDraft) => {
-    const project: Project = {
-      id: uid('p'),
-      name: input.name.trim() || '새 프로젝트',
-      client: input.client.trim(),
-      date: normalizeISODate(input.date),
-      entries: [],
-      createdAt: new Date().toISOString(),
-    }
-    setStore((s) => ({
-      ...s,
-      projects: [project, ...s.projects],
-      activeProjectId: project.id,
-    }))
-  }, [])
-
-  const updateProject = useCallback(
-    (id: string, patch: ProjectDraft) => {
-      patchProject(id, (p) => ({
+  const toggleLaborPaid = useCallback(
+    (projectId: string, entryId: string) => {
+      patchProject(projectId, (p) => ({
         ...p,
-        name: patch.name.trim() || p.name,
-        client: patch.client.trim(),
-        date: normalizeISODate(patch.date),
+        entries: p.entries.map((e) =>
+          e.id === entryId && e.kind === 'labor' ? { ...e, paid: !e.paid } : e,
+        ),
       }))
     },
     [patchProject],
@@ -149,37 +162,6 @@ export function useStore() {
       activeProjectId: s.activeProjectId === id ? null : s.activeProjectId,
     }))
   }, [])
-
-  const addEntry = useCallback(
-    (projectId: string, data: EntryInput) => {
-      const entry = normalizeEntry({ ...data, id: uid() })
-      if (!entry) return
-      patchProject(projectId, (p) => ({ ...p, entries: [entry, ...p.entries] }))
-    },
-    [patchProject],
-  )
-
-  const updateEntry = useCallback(
-    (projectId: string, entryId: string, data: EntryInput) => {
-      const entry = normalizeEntry({ ...data, id: entryId })
-      if (!entry) return
-      patchProject(projectId, (p) => ({
-        ...p,
-        entries: p.entries.map((e) => (e.id === entryId ? entry : e)),
-      }))
-    },
-    [patchProject],
-  )
-
-  const deleteEntry = useCallback(
-    (projectId: string, entryId: string) => {
-      patchProject(projectId, (p) => ({
-        ...p,
-        entries: p.entries.filter((e) => e.id !== entryId),
-      }))
-    },
-    [patchProject],
-  )
 
   const exportBackup = useCallback(() => {
     downloadStoreBackup(store)
@@ -216,17 +198,10 @@ export function useStore() {
     store,
     replaceStore,
     projects: store.projects,
-    activeProject,
-    month,
-    setMonth,
-    openProject,
-    closeProject,
-    createProject,
-    updateProject,
+    saveProject,
     deleteProject,
-    addEntry,
-    updateEntry,
-    deleteEntry,
+    addPayment,
+    toggleLaborPaid,
     exportBackup,
     importBackup,
   }
