@@ -95,3 +95,88 @@ export function monthTotals(projects: Project[], month: string): Totals {
 export function projectMonthTotals(project: Project, month: string): Totals {
   return sumEntries(project.entries.filter((e) => e.date.startsWith(month)))
 }
+
+/* ───────────── 정산장부: 받을 돈 / 미수금 ───────────── */
+
+export type PayStatus = 'unpaid' | 'partial' | 'done'
+
+export interface Ledger {
+  /** 받을 금액 (0 = 미정) */
+  amount: number
+  /** 지금까지 받은 돈 */
+  received: number
+  labor: number
+  equipment: number
+  misc: number
+  expense: number
+  /** 아직 받을 돈 */
+  due: number
+  /** 받을 금액 − 지출 */
+  profit: number
+  status: PayStatus
+  /** 촬영일이 오늘 이후 */
+  upcoming: boolean
+  /** 입금 기한이 지났는데 다 못 받음 */
+  overdue: boolean
+  laborUnpaid: number
+  /** 마지막 입금일 */
+  lastPay: string
+}
+
+export function projectLedger(project: Project, today: string = todayISO()): Ledger {
+  const t = projectTotals(project)
+  const amount = project.amount
+  const received = t.income
+  const status: PayStatus =
+    amount > 0 && received >= amount ? 'done' : received > 0 ? 'partial' : 'unpaid'
+  const upcoming = !!project.date && project.date > today
+  const laborUnpaid = project.entries
+    .filter((e) => e.kind === 'labor' && !e.paid)
+    .reduce((s, e) => s + e.amount, 0)
+  const lastPay = project.entries
+    .filter((e) => e.kind === 'income')
+    .map((e) => e.date)
+    .sort()
+    .pop() ?? ''
+  return {
+    amount,
+    received,
+    labor: t.labor,
+    equipment: t.equipment,
+    misc: t.misc,
+    expense: t.expense,
+    due: Math.max(0, amount - received),
+    profit: amount - t.expense,
+    status,
+    upcoming,
+    overdue: status !== 'done' && !upcoming && !!project.dueDate && project.dueDate < today,
+    laborUnpaid,
+    lastPay,
+  }
+}
+
+export interface PersonLabor {
+  name: string
+  roles: string[]
+  total: number
+  unpaid: number
+  items: { project: Project; entry: Entry }[]
+}
+
+/** 여러 프로젝트의 인건비를 사람별로 (미지급 많은 순) */
+export function laborAcrossProjects(projects: Project[]): PersonLabor[] {
+  const map = new Map<string, PersonLabor>()
+  for (const project of projects) {
+    for (const entry of project.entries) {
+      if (entry.kind !== 'labor') continue
+      const name = entry.title.trim() || '이름 없음'
+      const row = map.get(name) ?? { name, roles: [], total: 0, unpaid: 0, items: [] }
+      row.total += entry.amount
+      if (!entry.paid) row.unpaid += entry.amount
+      if (entry.role && !row.roles.includes(entry.role)) row.roles.push(entry.role)
+      row.items.push({ project, entry })
+      map.set(name, row)
+    }
+  }
+  return [...map.values()].sort((a, b) => b.unpaid - a.unpaid || b.total - a.total)
+}

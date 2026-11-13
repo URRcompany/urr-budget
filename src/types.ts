@@ -21,6 +21,8 @@ export interface Entry {
   amount: number
   /** YYYY-MM-DD — 수입은 실제로 받은 날 */
   date: string
+  /** 인건비 지급 여부 (인건비만) */
+  paid?: boolean
 }
 
 export interface Project {
@@ -29,14 +31,13 @@ export interface Project {
   client: string
   /** YYYY-MM-DD. 비어 있으면 날짜 없음 */
   date: string
+  /** 받을 금액(계약 기준 실제 입금될 총액). 0 = 미정 */
+  amount: number
+  /** 입금 기한 YYYY-MM-DD (선택) */
+  dueDate: string
+  memo: string
   entries: Entry[]
   createdAt: string
-}
-
-export interface ProjectDraft {
-  name: string
-  client: string
-  date: string
 }
 
 export interface AppStore {
