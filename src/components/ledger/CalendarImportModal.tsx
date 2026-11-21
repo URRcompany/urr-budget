@@ -79,7 +79,7 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
   })
 
   const rows = phase.step === 'pick' ? phase.rows : []
-  const visible = rows.filter((r) => showAll || r.project || r.pay.kind === 'amount')
+  const visible = rows.filter((r) => showAll || r.project || r.relevant)
   const hiddenCount = rows.length - visible.length
   const chosen = rows.filter((r) => picked.has(rowKey(r)) && r.state !== 'linked')
   const newCount = chosen.filter((r) => r.state === 'new').length
@@ -105,8 +105,8 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
       <div className="lg-modal lg-cal">
         <h2>구글 캘린더에서 가져오기</h2>
         <p className="lg-meta" style={{ marginBottom: 14 }}>
-          '촬영' · '업무' 캘린더 일정 메모의 <b>페이:</b> 줄을 받을 금액으로 가져와요. 숫자만 적으면 만 원
-          단위예요 (페이: 40 → 40만 원).
+          '촬영' 캘린더 일정을 프로젝트로 가져와요. 메모의 <b>페이:</b> 줄이 받을 금액이 되고(페이: 40 → 40만 원),
+          페이가 미정이거나 안 적힌 일정은 금액 미정으로 들어가요. '페이: 없음'과 '업무' 일정은 기본으로 빼요.
         </p>
 
         {phase.step === 'connect' && (
@@ -175,7 +175,7 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
             </div>
             {(hiddenCount > 0 || showAll) && (
               <button type="button" className="lg-chip" style={{ marginTop: 10 }} onClick={() => setShowAll((v) => !v)}>
-                {showAll ? '페이 적힌 일정만 보기' : `페이 없는 일정 ${hiddenCount}개도 보기`}
+                {showAll ? '촬영 일정만 보기' : `페이 없음 · 업무 일정 ${hiddenCount}개도 보기`}
               </button>
             )}
             <p className="lg-meta" style={{ marginTop: 10 }}>
