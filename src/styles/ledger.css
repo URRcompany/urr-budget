@@ -708,3 +708,86 @@ body:has(.lg) {
     display: none;
   }
 }
+
+/* 월별 탭 */
+.lg-summary--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 760px) {
+  .lg-summary--3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lg-summary--3 .lg-stat:first-child {
+    grid-column: 1/-1;
+  }
+}
+.lg-month td {
+  vertical-align: top;
+}
+.lg-month tr.is-now td {
+  background: color-mix(in srgb, var(--lg-amber-bg) 55%, var(--lg-card));
+}
+.lg-ml {
+  margin-left: 6px;
+}
+.lg-mbar {
+  position: relative;
+  height: 6px;
+  margin-top: 6px;
+  background: var(--lg-soft);
+  border-radius: 9px;
+  overflow: hidden;
+  max-width: 220px;
+}
+.lg-mbar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 9px;
+}
+.lg-mbar .s {
+  background: color-mix(in srgb, var(--lg-ink) 22%, transparent);
+}
+.lg-mbar .p {
+  background: var(--lg-green);
+}
+.lg-month tr.lg-total td {
+  background: var(--lg-soft);
+  border-top: 2px solid var(--lg-line);
+}
+.lg-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--lg-radius);
+}
+@media (max-width: 560px) {
+  .lg-hide-sm {
+    display: none;
+  }
+  .lg-month {
+    font-size: 13px;
+  }
+  .lg-month th,
+  .lg-month td {
+    padding: 9px 7px;
+  }
+  .lg-month tr.sub td {
+    padding: 7px 7px 7px 14px;
+    font-size: 12px;
+  }
+  .lg-month .lg-ml {
+    display: none;
+  }
+}
+
+.lg-short {
+  display: none;
+}
+@media (max-width: 560px) {
+  .lg-month .lg-full {
+    display: none;
+  }
+  .lg-month .lg-short {
+    display: inline;
+  }
+}

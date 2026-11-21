@@ -74,3 +74,28 @@ assert.equal(people.length, 1); assert.equal(people[0].total, 150_000); assert.e
 assert.deepEqual(people[0].roles, ['AC', 'DIT'])
 
 console.log('check-ledger: ok')
+
+// 월별 매출: 촬영일 달 기준, 입금은 입금일 달 기준
+{
+  const { monthlyRevenue } = await import('../src/lib/money')
+  const mk = (id: string, date: string, amount: number, entries: Project['entries'] = []) =>
+    base({ id, date, amount, entries })
+  const rows = monthlyRevenue([
+    mk('a', '2026-10-12', 420_000, [
+      { id: 'e1', kind: 'equipment', title: '', amount: 60_000, date: '2026-10-12' },
+      { id: 'i1', kind: 'income', title: '', amount: 420_000, date: '2026-11-03' },
+    ]),
+    mk('b', '2026-10-26', 450_000),
+    mk('c', '2026-11-23', 300_000, [{ id: 'l', kind: 'labor', title: '김', role: '', amount: 100_000, date: '2026-11-23', paid: false }]),
+    mk('d', '2026-11-26', 0),
+    mk('e', '', 100_000),
+  ])
+  assert.deepEqual(rows.map((r) => r.month), ['2026-11', '2026-10', '미정'])
+  const oct = rows.find((r) => r.month === '2026-10')!
+  assert.equal(oct.sales, 870_000); assert.equal(oct.expense, 60_000); assert.equal(oct.profit, 810_000)
+  assert.equal(oct.received, 0, '10월 촬영분 입금은 11월에 들어옴'); assert.equal(oct.count, 2)
+  const nov = rows.find((r) => r.month === '2026-11')!
+  assert.equal(nov.sales, 300_000); assert.equal(nov.profit, 200_000); assert.equal(nov.received, 420_000)
+  assert.equal(nov.undecided, 1)
+  console.log('check-ledger monthly: ok')
+}
