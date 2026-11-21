@@ -66,7 +66,13 @@ export function eventTitle(e: CalendarEvent): string {
   return (e.summary ?? '').replace(TENTATIVE, '').trim() || '제목 없는 일정'
 }
 
-export type RowState = 'new' | 'linked' | 'changed'
+/**
+ * new: 새 프로젝트로 추가
+ * linked: 이미 이 일정과 연결됨
+ * changed: 연결됐는데 캘린더 쪽 페이·날짜가 바뀜
+ * match: 연결은 안 됐지만 같은 날·비슷한 이름의 프로젝트가 이미 있음 (손으로 넣었거나 예전에 옮긴 것)
+ */
+export type RowState = 'new' | 'linked' | 'changed' | 'match'
 
 export interface ImportRow {
   event: CalendarEvent
@@ -82,6 +88,29 @@ export interface ImportRow {
   preselect: boolean
 }
 
+// 이름 비교에서 빼는 흔한 낱말
+const STOP_WORDS = new Set(['촬영', '감독', '촬영감독', '조명감독', '행사', '영상', '미정'])
+
+function nameTokens(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .split(/[^0-9a-z가-힣]+/)
+      .filter((t) => t.length >= 2 && !STOP_WORDS.has(t)),
+  )
+}
+
+/** 같은 날 일정과 프로젝트가 같은 일인지: 이름에 겹치는 낱말이 하나라도 있으면 같은 일로 본다 */
+function looksSame(title: string, projectName: string): boolean {
+  const a = nameTokens(title)
+  const b = nameTokens(projectName)
+  for (const t of a) {
+    if (b.has(t)) return true
+    for (const u of b) if (t.includes(u) || u.includes(t)) return true
+  }
+  return false
+}
+
 function payAmount(pay: PayInfo): number {
   return pay.kind === 'amount' ? pay.amount : 0
 }
@@ -93,6 +122,9 @@ export function buildRows(
   const linked = new Map(
     projects.filter((p) => p.calendarEventId).map((p) => [p.calendarEventId as string, p]),
   )
+  // 캘린더와 연결 안 된 프로젝트 — 같은 일정을 또 추가하지 않도록 짝을 찾는다
+  const unlinked = projects.filter((p) => !p.calendarEventId)
+  const claimed = new Set<string>()
   const rows: ImportRow[] = []
   for (const { calendar, events } of byCalendar) {
     for (const event of events) {
@@ -100,9 +132,19 @@ export function buildRows(
       const date = eventDate(event)
       const pay = parsePay(event.description)
       const tentative = isTentative(event)
-      const project = linked.get(event.id) ?? null
+      let project = linked.get(event.id) ?? null
       let state: RowState = 'new'
-      if (project) {
+      if (!project && date) {
+        const twin = unlinked.find(
+          (p) => !claimed.has(p.id) && p.date === date && looksSame(eventTitle(event), p.name),
+        )
+        if (twin) {
+          claimed.add(twin.id)
+          project = twin
+          state = 'match'
+        }
+      }
+      if (project && state !== 'match') {
         const changed =
           payAmount(pay) !== (project.calendarPay ?? 0) || (!!date && date !== project.date)
         state = changed ? 'changed' : 'linked'
@@ -117,7 +159,9 @@ export function buildRows(
         project,
         state,
         preselect:
-          state === 'changed' || (state === 'new' && pay.kind === 'amount' && !tentative),
+          state === 'changed' ||
+          state === 'match' ||
+          (state === 'new' && pay.kind === 'amount' && !tentative),
       })
     }
   }
@@ -130,6 +174,17 @@ export function rowsToProjects(rows: ImportRow[]): { created: Project[]; updated
   const updated: Project[] = []
   for (const r of rows) {
     const amount = payAmount(r.pay)
+    if (r.project && r.state === 'match') {
+      // 이미 있는 프로젝트에 일정만 연결한다. 이름·날짜·입력해 둔 받을 금액은 그대로,
+      // 받을 금액이 비어 있을 때만 캘린더 페이로 채운다.
+      updated.push({
+        ...r.project,
+        amount: r.project.amount || amount,
+        calendarEventId: r.event.id,
+        calendarPay: amount,
+      })
+      continue
+    }
     if (r.project) {
       // 입금·인건비 기록은 건드리지 않고 받을 금액과 촬영일만 캘린더에 맞춘다.
       updated.push({

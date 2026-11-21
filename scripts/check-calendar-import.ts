@@ -76,3 +76,40 @@ assert.equal('calendarEventId' in store.projects[1], false)
 assert.equal('calendarPay' in store.projects[1], false)
 
 console.log('calendar import ✓')
+
+// 캘린더와 연결 안 된 기존 프로젝트(손으로 넣었거나 예전에 옮긴 것)는 새로 추가하지 않고 연결한다
+{
+  const existing = (id: string, name: string, date: string, amount: number) => ({
+    id, name, client: '', date, amount, dueDate: '', memo: '', entries: [], createdAt: '2026-11-14T00:00:00.000Z',
+  })
+  const projects = [
+    existing('p1', '장애경제인대회 촬영', '2026-11-18', 250_000),
+    existing('p2', '아티스트 라이브클립 (조명감독)', '2026-11-18', 400_000),
+    existing('p3', '구로성심병원', '2026-12-09', 0),
+    existing('p4', '구로성심병원', '2026-11-04', 420_000),
+  ]
+  const ev = (id: string, summary: string, date: string, description: string): CalendarEvent => ({
+    id, summary, description, start: { date },
+  })
+  const r = buildRows([{ calendar: '촬영', events: [
+    ev('e1', '장애경제인대회 촬영', '2026-11-18', '페이: 25'),
+    ev('e2', '정섭감독 촬영 - 아티스트 라이브클립 조명감독', '2026-11-18', '페이: 40'),
+    ev('e3', '현길감독 촬영 - 구로성심병원', '2026-12-09', '페이: 30'),
+    ev('e4', '새 촬영', '2026-11-30', '페이: 20'),
+  ] }], projects)
+  const byId = Object.fromEntries(r.map((x) => [x.event.id, x]))
+  assert.equal(byId.e1.state, 'match'); assert.equal(byId.e1.project?.id, 'p1')
+  assert.equal(byId.e2.state, 'match'); assert.equal(byId.e2.project?.id, 'p2')
+  assert.equal(byId.e3.state, 'match'); assert.equal(byId.e3.project?.id, 'p3', '날짜가 같은 쪽과만 짝')
+  assert.equal(byId.e4.state, 'new')
+  const { created, updated } = rowsToProjects(r)
+  assert.equal(created.length, 1, '새 일정만 추가')
+  const u3 = updated.find((p) => p.id === 'p3')!
+  assert.equal(u3.amount, 300_000, '받을 금액이 비어 있으면 채움'); assert.equal(u3.calendarEventId, 'e3')
+  const u2 = updated.find((p) => p.id === 'p2')!
+  assert.equal(u2.amount, 400_000); assert.equal(u2.name, '아티스트 라이브클립 (조명감독)', '이름은 그대로')
+  // 연결 후 다시 열면 '이미 가져옴'
+  const again = buildRows([{ calendar: '촬영', events: [ev('e3', '현길감독 촬영 - 구로성심병원', '2026-12-09', '페이: 30')] }], [u3])
+  assert.equal(again[0].state, 'linked')
+  console.log('calendar import (기존 프로젝트 연결) ✓')
+}

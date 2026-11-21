@@ -84,6 +84,7 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
   const chosen = rows.filter((r) => picked.has(rowKey(r)) && r.state !== 'linked')
   const newCount = chosen.filter((r) => r.state === 'new').length
   const updCount = chosen.filter((r) => r.state === 'changed').length
+  const matchCount = chosen.filter((r) => r.state === 'match').length
 
   const toggle = (r: ImportRow) =>
     setPicked((s) => {
@@ -159,6 +160,10 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
                             r.date && r.project && r.date !== r.project.date ? ` · 날짜 ${dshort(r.project.date)} → ${dshort(r.date)}` : ''
                           }`}
                         {r.state === 'new' && '새 프로젝트로 추가'}
+                        {r.state === 'match' &&
+                          `이미 있는 '${r.project?.name}'에 연결 (새로 추가 안 함)${
+                            r.project && !r.project.amount && r.pay.kind === 'amount' ? ' · 받을 금액 채움' : ''
+                          }`}
                       </span>
                     </span>
                     <span className={`lg-cal-pay lg-num ${r.pay.kind === 'amount' ? '' : 'lg-meta'}`}>
@@ -174,7 +179,8 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
               </button>
             )}
             <p className="lg-meta" style={{ marginTop: 10 }}>
-              이미 가져온 프로젝트를 고치면 받을 금액과 촬영일만 바뀌어요. 입금·인건비 기록은 그대로예요.
+              이미 가져온 프로젝트를 고치면 받을 금액과 촬영일만 바뀌어요. 입금·인건비 기록은 그대로예요. 같은 날
+              비슷한 이름의 프로젝트가 있으면 새로 만들지 않고 연결만 해요.
             </p>
           </>
         )}
@@ -187,7 +193,7 @@ export function CalendarImportModal({ projects, onClose, onApply }: CalendarImpo
           {phase.step === 'pick' && (
             <button type="button" className="lg-btn lg-btn--primary" disabled={!chosen.length} onClick={apply}>
               {chosen.length
-                ? [newCount && `${newCount}개 추가`, updCount && `${updCount}개 수정`].filter(Boolean).join(' · ')
+                ? [newCount && `${newCount}개 추가`, matchCount && `${matchCount}개 연결`, updCount && `${updCount}개 수정`].filter(Boolean).join(' · ')
                 : '가져오기'}
             </button>
           )}
