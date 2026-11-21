@@ -6,6 +6,8 @@ import { UserBar } from '../UserBar'
 import { BackupControls } from '../BackupControls'
 import { ProjectEditor } from './ProjectEditor'
 import { QuickPayModal } from './QuickPayModal'
+import { CalendarImportModal } from './CalendarImportModal'
+import { getGoogleClientId } from '../../lib/auth'
 import { dshort, won } from './format'
 
 type Tab = 'projects' | 'labor' | 'equip'
@@ -36,6 +38,7 @@ interface LedgerHomeProps {
   onDelete: (id: string) => void
   onPay: (projectId: string, payment: { date: string; amount: number; memo: string }) => void
   onToggleLaborPaid: (projectId: string, entryId: string) => void
+  onCalendarImport: (created: Project[], updated: Project[]) => void
   onExportBackup: () => void
   onImportBackup: (
     file: File,
@@ -50,6 +53,8 @@ export function LedgerHome(props: LedgerHomeProps) {
   const [ui, setUi] = useState<UiState>(loadUi)
   const [editing, setEditing] = useState<Project | 'new' | null>(null)
   const [paying, setPaying] = useState<Project | null>(null)
+  const [importing, setImporting] = useState(false)
+  const canImport = !!getGoogleClientId()
 
   useEffect(() => {
     try {
@@ -88,6 +93,11 @@ export function LedgerHome(props: LedgerHomeProps) {
             </option>
           ))}
         </select>
+        {canImport && (
+          <button type="button" className="lg-btn" onClick={() => setImporting(true)}>
+            캘린더에서 가져오기
+          </button>
+        )}
         <button type="button" className="lg-btn lg-btn--primary" onClick={() => setEditing('new')}>
           + 프로젝트
         </button>
@@ -147,6 +157,13 @@ export function LedgerHome(props: LedgerHomeProps) {
             patchUi({ open: p.id })
           }}
           onDelete={props.onDelete}
+        />
+      )}
+      {importing && (
+        <CalendarImportModal
+          projects={projects}
+          onClose={() => setImporting(false)}
+          onApply={props.onCalendarImport}
         />
       )}
       {paying && (

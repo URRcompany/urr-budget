@@ -14,6 +14,7 @@ function App() {
     deleteProject,
     addPayment,
     toggleLaborPaid,
+    applyCalendarImport,
     exportBackup,
     importBackup,
   } = useStore()
@@ -32,6 +33,7 @@ function App() {
         onDelete={deleteProject}
         onPay={addPayment}
         onToggleLaborPaid={toggleLaborPaid}
+        onCalendarImport={applyCalendarImport}
         onExportBackup={exportBackup}
         onImportBackup={importBackup}
       />

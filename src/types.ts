@@ -38,6 +38,10 @@ export interface Project {
   memo: string
   entries: Entry[]
   createdAt: string
+  /** 구글 캘린더에서 가져온 프로젝트면 그 일정 ID */
+  calendarEventId?: string
+  /** 가져올 때 캘린더에 적혀 있던 페이(원). 캘린더 쪽이 바뀌었는지 비교용 */
+  calendarPay?: number
 }
 
 export interface AppStore {
