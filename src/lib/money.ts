@@ -180,3 +180,53 @@ export function laborAcrossProjects(projects: Project[]): PersonLabor[] {
   }
   return [...map.values()].sort((a, b) => b.unpaid - a.unpaid || b.total - a.total)
 }
+
+/* ───────────── 월별 매출 · 수익 ───────────── */
+
+export interface MonthRow {
+  /** YYYY-MM, 촬영일 없는 프로젝트는 '미정' */
+  month: string
+  /** 그 달 촬영한 프로젝트의 받을 금액 합 (매출) */
+  sales: number
+  /** 그 달 촬영한 프로젝트의 지출 합 */
+  expense: number
+  /** 매출 − 지출 */
+  profit: number
+  /** 그 달에 실제로 들어온 돈 (입금일 기준) */
+  received: number
+  /** 그 달 촬영 건수 */
+  count: number
+  /** 받을 금액이 미정(0)인 건수 */
+  undecided: number
+}
+
+/**
+ * 월별 매출·수익. 매출·지출·수익은 촬영일이 속한 달, 입금은 입금일이 속한 달 기준.
+ * 최근 달이 위로 오고 '미정'은 맨 아래.
+ */
+export function monthlyRevenue(projects: Project[]): MonthRow[] {
+  const map = new Map<string, MonthRow>()
+  const row = (month: string) => {
+    let r = map.get(month)
+    if (!r) {
+      r = { month, sales: 0, expense: 0, profit: 0, received: 0, count: 0, undecided: 0 }
+      map.set(month, r)
+    }
+    return r
+  }
+  for (const p of projects) {
+    const t = projectTotals(p)
+    const r = row(p.date ? p.date.slice(0, 7) : '미정')
+    r.sales += p.amount
+    r.expense += t.expense
+    r.profit += p.amount - t.expense
+    r.count += 1
+    if (!p.amount) r.undecided += 1
+    for (const e of p.entries) {
+      if (e.kind === 'income' && e.date) row(e.date.slice(0, 7)).received += e.amount
+    }
+  }
+  return [...map.values()].sort((a, b) =>
+    a.month === '미정' ? 1 : b.month === '미정' ? -1 : b.month.localeCompare(a.month),
+  )
+}

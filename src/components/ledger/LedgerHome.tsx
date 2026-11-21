@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Project } from '../../types'
-import { laborAcrossProjects, projectLedger, type Ledger } from '../../lib/money'
+import {
+  laborAcrossProjects,
+  monthlyRevenue,
+  projectLedger,
+  projectTotals,
+  todayISO,
+  type Ledger,
+} from '../../lib/money'
 import { AppBrand } from '../AppBrand'
 import { UserBar } from '../UserBar'
 import { BackupControls } from '../BackupControls'
@@ -8,9 +15,9 @@ import { ProjectEditor } from './ProjectEditor'
 import { QuickPayModal } from './QuickPayModal'
 import { CalendarImportModal } from './CalendarImportModal'
 import { getGoogleClientId } from '../../lib/auth'
-import { dshort, won } from './format'
+import { dshort, manwon, won } from './format'
 
-type Tab = 'projects' | 'labor' | 'equip'
+type Tab = 'projects' | 'monthly' | 'labor' | 'equip'
 type Filter = 'open' | 'done' | 'all'
 
 interface UiState {
@@ -19,14 +26,24 @@ interface UiState {
   year: string
   open: string | null
   openPerson: string | null
+  openMonth?: string | null
 }
 
 const UI_KEY = 'reelbudget.ui.v1'
 
 function loadUi(): UiState {
-  const base: UiState = { tab: 'projects', filter: 'open', year: 'all', open: null, openPerson: null }
+  const base: UiState = {
+    tab: 'projects',
+    filter: 'open',
+    year: 'all',
+    open: null,
+    openPerson: null,
+  }
   try {
-    return { ...base, ...(JSON.parse(localStorage.getItem(UI_KEY) || '{}') as Partial<UiState>) }
+    return {
+      ...base,
+      ...(JSON.parse(localStorage.getItem(UI_KEY) || '{}') as Partial<UiState>),
+    }
   } catch {
     return base
   }
@@ -68,10 +85,7 @@ export function LedgerHome(props: LedgerHomeProps) {
 
   const years = useMemo(() => [...new Set(projects.map(yearOf))].sort().reverse(), [projects])
   const year = ui.year !== 'all' && !years.includes(ui.year) ? 'all' : ui.year
-  const visible = useMemo(
-    () => projects.filter((p) => year === 'all' || yearOf(p) === year),
-    [projects, year],
-  )
+  const visible = useMemo(() => projects.filter((p) => year === 'all' || yearOf(p) === year), [projects, year])
   const ledgers = useMemo(() => new Map(visible.map((p) => [p.id, projectLedger(p)])), [visible])
   const L = (p: Project) => ledgers.get(p.id) ?? projectLedger(p)
 
@@ -109,6 +123,7 @@ export function LedgerHome(props: LedgerHomeProps) {
         {(
           [
             ['projects', '프로젝트'],
+            ['monthly', '월별'],
             ['labor', '인건비'],
             ['equip', '장비'],
           ] as const
@@ -142,6 +157,7 @@ export function LedgerHome(props: LedgerHomeProps) {
       {ui.tab === 'labor' && (
         <LaborTab projects={visible} ui={ui} patchUi={patchUi} onToggleLaborPaid={props.onToggleLaborPaid} />
       )}
+      {ui.tab === 'monthly' && <MonthlyTab projects={visible} ui={ui} patchUi={patchUi} />}
       {ui.tab === 'equip' && <EquipTab projects={visible} />}
 
       <footer className="lg-footer">
@@ -160,11 +176,7 @@ export function LedgerHome(props: LedgerHomeProps) {
         />
       )}
       {importing && (
-        <CalendarImportModal
-          projects={projects}
-          onClose={() => setImporting(false)}
-          onApply={props.onCalendarImport}
-        />
+        <CalendarImportModal projects={projects} onClose={() => setImporting(false)} onApply={props.onCalendarImport} />
       )}
       {paying && (
         <QuickPayModal
@@ -185,7 +197,16 @@ function Summary({ projects, ledger }: { projects: Project[]; ledger: (p: Projec
     lateCnt = 0,
     upDue = 0,
     upCnt = 0
-  const t = { amount: 0, received: 0, expense: 0, labor: 0, equipment: 0, misc: 0, profit: 0, laborUnpaid: 0 }
+  const t = {
+    amount: 0,
+    received: 0,
+    expense: 0,
+    labor: 0,
+    equipment: 0,
+    misc: 0,
+    profit: 0,
+    laborUnpaid: 0,
+  }
   for (const p of projects) {
     const l = ledger(p)
     t.amount += l.amount
@@ -591,11 +612,7 @@ function LaborTab({
           {people.map((m) => {
             const isOpen = ui.openPerson === m.name
             return [
-              <tr
-                key={m.name}
-                className="clickable"
-                onClick={() => patchUi({ openPerson: isOpen ? null : m.name })}
-              >
+              <tr key={m.name} className="clickable" onClick={() => patchUi({ openPerson: isOpen ? null : m.name })}>
                 <td>
                   <b>{m.name}</b>
                 </td>
@@ -695,6 +712,191 @@ function EquipTab({ projects }: { projects: Project[] }) {
           ))}
         </tbody>
       </table>
+    </>
+  )
+}
+
+/* ───────── 월별 탭 ───────── */
+
+function monthLabel(m: string): string {
+  if (m === '미정') return '날짜 미정'
+  return `${Number(m.slice(5))}월`
+}
+
+function MonthlyTab({
+  projects,
+  ui,
+  patchUi,
+}: {
+  projects: Project[]
+  ui: UiState
+  patchUi: (p: Partial<UiState>) => void
+}) {
+  const rows = monthlyRevenue(projects)
+  if (!rows.length) {
+    return (
+      <div className="lg-empty">
+        <b>아직 프로젝트가 없어요</b>
+        촬영일과 받을 금액을 넣으면 달마다 매출과 수익을 모아 보여줘요.
+      </div>
+    )
+  }
+  const thisMonth = todayISO().slice(0, 7)
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.sales, r.received)))
+  const total = rows.reduce(
+    (t, r) => ({
+      sales: t.sales + r.sales,
+      expense: t.expense + r.expense,
+      profit: t.profit + r.profit,
+      received: t.received + r.received,
+      count: t.count + r.count,
+    }),
+    { sales: 0, expense: 0, profit: 0, received: 0, count: 0 },
+  )
+  const dated = rows.filter((r) => r.month !== '미정' && r.month <= thisMonth && r.count > 0)
+  const avg = dated.length ? Math.round(dated.reduce((s, r) => s + r.sales, 0) / dated.length) : 0
+  const cur = rows.find((r) => r.month === thisMonth)
+
+  return (
+    <>
+      <div className="lg-summary lg-summary--3">
+        <div className="lg-stat">
+          <div className="k">이번 달 매출 ({Number(thisMonth.slice(5))}월)</div>
+          <div className="v lg-num">{won(cur?.sales ?? 0)}</div>
+          <div className="d">
+            수익 {won(cur?.profit ?? 0)} · 입금 {won(cur?.received ?? 0)}
+          </div>
+        </div>
+        <div className="lg-stat">
+          <div className="k">월평균 매출</div>
+          <div className="v lg-num">{won(avg)}</div>
+          <div className="d">이번 달까지 촬영 있던 {dated.length}개월 기준</div>
+        </div>
+        <div className="lg-stat">
+          <div className="k">{ui.year === 'all' ? '전체' : `${ui.year}년`} 합계</div>
+          <div className="v lg-num">{won(total.sales)}</div>
+          <div className="d">
+            수익 {won(total.profit)} · {total.count}건
+          </div>
+        </div>
+      </div>
+
+      <div className="lg-sec">
+        <span>월별 · 최근 달부터</span>
+        <span>매출·수익은 촬영일, 입금은 들어온 날 기준</span>
+      </div>
+      <div className="lg-table-wrap">
+        <table className="lg-table lg-month">
+          <thead>
+            <tr>
+              <th>월</th>
+              <th className="r">매출</th>
+              <th className="r lg-hide-sm">지출</th>
+              <th className="r">수익</th>
+              <th className="r">입금</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const open = ui.openMonth === r.month
+              const list = projects
+                .filter((p) => (p.date ? p.date.slice(0, 7) : '미정') === r.month)
+                .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+              const future = r.month !== '미정' && r.month > thisMonth
+              return [
+                <tr
+                  key={r.month}
+                  className={`clickable ${r.month === thisMonth ? 'is-now' : ''}`}
+                  onClick={() => patchUi({ openMonth: open ? null : r.month })}
+                >
+                  <td>
+                    <b>{monthLabel(r.month)}</b>
+                    {r.month === thisMonth && <span className="lg-badge lg-b-partial lg-ml">이번 달</span>}
+                    {future && <span className="lg-badge lg-b-up lg-ml">예정</span>}
+                    <div className="lg-meta">
+                      {r.month !== '미정' && `${r.month.slice(0, 4)} · `}
+                      {r.count}건{r.undecided ? ` · 미정 ${r.undecided}` : ''}
+                    </div>
+                    <div className="lg-mbar" aria-hidden>
+                      <i className="s" style={{ width: `${(r.sales / max) * 100}%` }} />
+                      <i
+                        className="p"
+                        style={{
+                          width: `${(Math.max(0, r.profit) / max) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </td>
+                  <td className="r lg-num">
+                    <Amt n={r.sales} />
+                  </td>
+                  <td className="r lg-num lg-hide-sm">{r.expense ? <Amt n={r.expense} /> : '-'}</td>
+                  <td className={`r lg-num ${r.profit < 0 ? 'lg-red' : ''}`}>
+                    <b>
+                      <Amt n={r.profit} />
+                    </b>
+                  </td>
+                  <td className="r lg-num lg-green">{r.received ? <Amt n={r.received} /> : '-'}</td>
+                </tr>,
+                ...(open
+                  ? list.map((p) => {
+                      const t = projectTotals(p)
+                      return (
+                        <tr className="sub" key={p.id}>
+                          <td>
+                            {p.date ? `${Number(p.date.slice(8))}일 · ` : ''}
+                            {p.name}
+                          </td>
+                          <td className="r lg-num">{p.amount ? <Amt n={p.amount} /> : '금액 미정'}</td>
+                          <td className="r lg-num lg-hide-sm">{t.expense ? <Amt n={t.expense} /> : '-'}</td>
+                          <td className="r lg-num">
+                            <Amt n={p.amount - t.expense} />
+                          </td>
+                          <td className="r lg-num">{t.income ? <Amt n={t.income} /> : '-'}</td>
+                        </tr>
+                      )
+                    })
+                  : []),
+              ]
+            })}
+            <tr className="lg-total">
+              <td>
+                <b>합계</b>
+              </td>
+              <td className="r lg-num">
+                <b>
+                  <Amt n={total.sales} />
+                </b>
+              </td>
+              <td className="r lg-num lg-hide-sm">
+                <Amt n={total.expense} />
+              </td>
+              <td className="r lg-num">
+                <b>
+                  <Amt n={total.profit} />
+                </b>
+              </td>
+              <td className="r lg-num">
+                <Amt n={total.received} />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="lg-meta" style={{ marginTop: 10 }}>
+        달을 누르면 그 달 촬영한 프로젝트가 펼쳐져요. 매출은 받을 금액(계약) 합계라 아직 못 받은 돈도 들어가요 — 실제
+        들어온 돈은 입금 칸을 보세요.
+      </p>
+    </>
+  )
+}
+
+/** 넓은 화면은 원 단위, 좁은 화면은 만 원 단위 */
+function Amt({ n }: { n: number }) {
+  return (
+    <>
+      <span className="lg-full">{won(n)}</span>
+      <span className="lg-short">{manwon(n)}</span>
     </>
   )
 }
