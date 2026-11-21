@@ -11,6 +11,7 @@
 - **인건비**: 이름 · 역할 · 금액 · 지급 여부, 인건비 탭에서 사람별 합계와 미지급액
 - **장비 비용 / 기타 지출**, 장비 탭에서 항목별 합계
 - 연도별 보기
+- **구글 캘린더에서 가져오기**: '촬영' · '업무' 캘린더 일정 메모의 `페이: 40` 줄을 받을 금액(40만 원)으로 가져옴. 이미 가져온 일정은 페이·날짜가 바뀌면 알려주고, 입금·인건비 기록은 그대로 둠
 - 브라우저 `localStorage` 자동 저장 + (설정 시) Firebase 클라우드 동기화
 - JSON 백업 내보내기 / 가져오기
 - **데스크톱 앱**: Electron 기반 Windows / macOS / Linux 설치형
@@ -53,4 +54,14 @@ npm run preview
 npx --yes tsx scripts/check-money.ts
 npx --yes tsx scripts/check-ledger.ts
 npx --yes tsx scripts/check-cloud-sync.ts
+npx --yes tsx scripts/check-calendar-import.ts
 ```
+
+## 구글 캘린더 가져오기 설정
+
+로그인에 쓰는 OAuth 클라이언트와 같은 Google Cloud 프로젝트에서:
+
+1. **API 및 서비스 → 라이브러리**에서 **Google Calendar API** 사용 설정
+2. **OAuth 동의 화면 → 데이터 액세스(범위)**에 `.../auth/calendar.readonly` 추가
+
+캘린더 토큰은 브라우저 메모리에만 있고 저장하지 않습니다.

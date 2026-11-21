@@ -54,7 +54,7 @@ function normalizeProject(raw: Partial<Project>): Project | null {
     raw.amount === undefined || raw.amount === null
       ? legacyAmount
       : Math.max(0, Math.round(Number(raw.amount) || 0))
-  return {
+  const project: Project = {
     id: raw.id,
     name: String(raw.name ?? '').trim() || '새 프로젝트',
     client: String(raw.client ?? '').trim(),
@@ -65,6 +65,12 @@ function normalizeProject(raw: Partial<Project>): Project | null {
     createdAt: raw.createdAt ?? new Date().toISOString(),
     entries,
   }
+  // Firestore는 undefined를 거절하므로 캘린더 연결 정보는 있을 때만 키를 둔다.
+  if (typeof raw.calendarEventId === 'string' && raw.calendarEventId) {
+    project.calendarEventId = raw.calendarEventId
+    project.calendarPay = Math.max(0, Math.round(Number(raw.calendarPay) || 0))
+  }
+  return project
 }
 
 export function normalizeStore(raw: AppStore): AppStore {
@@ -190,6 +196,18 @@ export function useStore() {
     return { ok: true as const, projectCount: imported.projects.length }
   }, [])
 
+  /** 캘린더에서 고른 일정을 새 프로젝트로 넣거나, 이미 가져온 프로젝트의 페이·날짜를 맞춘다 */
+  const applyCalendarImport = useCallback((created: Project[], updated: Project[]) => {
+    const fresh = created.map((p) => normalizeProject(p)).filter((p): p is Project => p !== null)
+    const patched = new Map(
+      updated.map((p) => normalizeProject(p)).filter((p): p is Project => p !== null).map((p) => [p.id, p]),
+    )
+    setStore((s) => ({
+      ...s,
+      projects: [...fresh, ...s.projects.map((p) => patched.get(p.id) ?? p)],
+    }))
+  }, [])
+
   const replaceStore = useCallback((next: AppStore) => {
     setStore(normalizeStore(next))
   }, [])
@@ -202,6 +220,7 @@ export function useStore() {
     deleteProject,
     addPayment,
     toggleLaborPaid,
+    applyCalendarImport,
     exportBackup,
     importBackup,
   }
