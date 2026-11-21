@@ -36,13 +36,14 @@ assert.equal(rows.length, 4, '취소된 일정은 빠진다')
 assert.deepEqual(rows.map((r) => r.event.id), ['b', 'a', 'c', 'd'], '날짜순')
 assert.equal(rows.find((r) => r.event.id === 'b')!.date, '2026-11-18')
 assert.equal(rows.find((r) => r.event.id === 'a')!.preselect, true)
-assert.equal(rows.find((r) => r.event.id === 'c')!.preselect, false, '미정 일정은 기본 해제')
+assert.equal(rows.find((r) => r.event.id === 'c')!.preselect, true, '촬영 캘린더의 미정 일정도 금액 미정으로 가져온다')
 assert.equal(rows.find((r) => r.event.id === 'c')!.title, '정섭감독 촬영', '(미정) 머리표 제거')
-assert.equal(rows.find((r) => r.event.id === 'd')!.preselect, false, '페이 없는 일정은 기본 해제')
+assert.equal(rows.find((r) => r.event.id === 'd')!.preselect, true, '촬영 캘린더는 페이 줄이 없어도 가져온다')
 
 // 가져오기 → 프로젝트
 const { created } = rowsToProjects(rows.filter((r) => r.preselect))
-assert.equal(created.length, 2)
+assert.equal(created.length, 4)
+assert.equal(created.find((x) => x.calendarEventId === 'c')!.amount, 0, '페이 미정은 금액 미정(0)')
 const p = created.find((x) => x.calendarEventId === 'a')!
 assert.equal(p.amount, 300_000)
 assert.equal(p.date, '2026-11-23')
@@ -112,4 +113,20 @@ console.log('calendar import ✓')
   const again = buildRows([{ calendar: '촬영', events: [ev('e3', '현길감독 촬영 - 구로성심병원', '2026-12-09', '페이: 30')] }], [u3])
   assert.equal(again[0].state, 'linked')
   console.log('calendar import (기존 프로젝트 연결) ✓')
+}
+
+// '페이: 없음' 촬영과 '업무' 캘린더 일정은 기본으로 빼고, 업무 일정이라도 페이가 적혀 있으면 넣는다
+{
+  const ev = (id: string, summary: string, description?: string): CalendarEvent => ({ id, summary, description, start: { date: '2026-11-16' } })
+  const r = buildRows([
+    { calendar: '촬영', events: [ev('n', '정섭감독 촬영 - 조명감독+촬영감독', '페이: 없음'), ev('m', '(미정) 마켓 612 촬영 - 기간 중 2회차', '11/30~12/4 중 2회차')] },
+    { calendar: '업무', events: [ev('w1', '최준범 대표님 사무실 방문', '시간: 미정'), ev('w2', '편집 외주', '페이: 20')] },
+  ], [])
+  const by = Object.fromEntries(r.map((x) => [x.event.id, x]))
+  assert.equal(by.n.relevant, false); assert.equal(by.n.preselect, false, '페이 없음은 뺀다')
+  assert.equal(by.m.relevant, true); assert.equal(by.m.preselect, true, '(미정) 촬영도 넣는다')
+  assert.equal(by.m.title, '마켓 612 촬영 - 기간 중 2회차')
+  assert.equal(by.w1.preselect, false, '업무 일정은 뺀다')
+  assert.equal(by.w2.preselect, true, '업무라도 페이가 있으면 넣는다')
+  console.log('calendar import (가져올 범위) ✓')
 }

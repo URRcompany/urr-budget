@@ -84,8 +84,22 @@ export interface ImportRow {
   /** 이미 이 일정과 연결된 프로젝트 */
   project: Project | null
   state: RowState
+  /**
+   * 정산장부에 넣을 만한 일정인지 (목록에 기본으로 보여줌).
+   * '촬영' 캘린더는 '페이: 없음'만 빼고 전부 — 페이 미정·안 적힘·(미정) 일정은 금액 미정으로 들어간다.
+   * 다른 캘린더('업무': 미팅·납품·마감)는 페이가 적힌 일정만.
+   */
+  relevant: boolean
   /** 처음 열었을 때 체크해 둘지 */
   preselect: boolean
+}
+
+/** 촬영 일정이 담긴 캘린더 이름 */
+export const SHOOT_CALENDAR = '촬영'
+
+export function isRelevant(calendar: string, pay: PayInfo): boolean {
+  if (calendar === SHOOT_CALENDAR) return pay.kind !== 'none'
+  return pay.kind === 'amount'
 }
 
 // 이름 비교에서 빼는 흔한 낱말
@@ -149,6 +163,7 @@ export function buildRows(
           payAmount(pay) !== (project.calendarPay ?? 0) || (!!date && date !== project.date)
         state = changed ? 'changed' : 'linked'
       }
+      const relevant = isRelevant(calendar, pay)
       rows.push({
         event,
         calendar,
@@ -158,10 +173,8 @@ export function buildRows(
         tentative,
         project,
         state,
-        preselect:
-          state === 'changed' ||
-          state === 'match' ||
-          (state === 'new' && pay.kind === 'amount' && !tentative),
+        relevant,
+        preselect: state === 'changed' || state === 'match' || (state === 'new' && relevant),
       })
     }
   }
