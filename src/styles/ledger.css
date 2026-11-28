@@ -791,3 +791,8 @@ body:has(.lg) {
     display: inline;
   }
 }
+@media (max-width: 760px) {
+  .lg-summary:not(.lg-summary--3) > .lg-stat:last-child {
+    grid-column: 1/-1;
+  }
+}
