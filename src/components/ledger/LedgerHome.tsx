@@ -228,34 +228,39 @@ function Summary({ projects, ledger }: { projects: Project[]; ledger: (p: Projec
     if (l.status !== 'done' && l.amount > 0) openCnt++
     if (l.overdue) lateCnt++
   }
+  // 실제 현금 기준: 받은 돈에서 이미 나간 돈(아직 안 준 인건비 제외)을 뺀 값
+  const cashNow = t.received - (t.expense - t.laborUnpaid)
   return (
     <div className="lg-summary">
       <div className={`lg-stat lg-stat--hero ${due ? '' : 'lg-stat--zero'}`}>
-        <div className="k">아직 받을 돈 (촬영 끝난 것)</div>
+        <div className="k">아직 받을 돈</div>
         <div className="v lg-num">{won(due)}</div>
         <div className="d">
-          {due ? `${openCnt}개 프로젝트${lateCnt ? ` · 기한 지난 ${lateCnt}건` : ''}` : '모두 입금 완료'}
-          {upCnt ? ` · 촬영 예정 ${upCnt}건 ${won(upDue)} 별도` : ''}
+          {due
+            ? `촬영 끝났는데 입금 안 된 ${openCnt}건${lateCnt ? ` · 기한 지난 ${lateCnt}건` : ''}`
+            : '촬영 끝난 건은 모두 입금 완료'}
+          {upCnt ? ` · 촬영 예정 ${upCnt}건 ${won(upDue)}은 별도` : ''}
         </div>
       </div>
       <div className="lg-stat">
-        <div className="k">입금 받은 돈</div>
+        <div className="k">받은 돈</div>
         <div className="v lg-num">{won(t.received)}</div>
-        <div className="d">총 계약 {won(t.amount)}</div>
+        <div className="d">계약 총 {won(t.amount)} 중 실제로 들어온 돈</div>
       </div>
       <div className="lg-stat">
-        <div className="k">총 지출</div>
+        <div className="k">쓴 돈</div>
         <div className="v lg-num">{won(t.expense)}</div>
         <div className="d">
           인건비 {won(t.labor)} · 장비 {won(t.equipment)}
           {t.misc ? ` · 기타 ${won(t.misc)}` : ''}
+          {t.laborUnpaid ? <span className="lg-red"> · 아직 안 준 인건비 {won(t.laborUnpaid)} 포함</span> : ''}
         </div>
       </div>
       <div className="lg-stat">
-        <div className="k">남는 돈 (계약 − 지출)</div>
-        <div className="v lg-num">{won(t.profit)}</div>
+        <div className="k">지금 남은 돈</div>
+        <div className={`v lg-num ${cashNow < 0 ? 'lg-red' : ''}`}>{won(cashNow)}</div>
         <div className="d">
-          {t.laborUnpaid ? <span className="lg-red">인건비 미지급 {won(t.laborUnpaid)}</span> : '인건비 모두 지급'}
+          받은 돈 − 이미 낸 돈 · 다 받고 다 주면 <b>예상 수익 {won(t.profit)}</b>
         </div>
       </div>
     </div>
@@ -467,7 +472,7 @@ function ProjectCard({
             지출 <b>{won(l.expense)}</b>
           </span>
           <span>
-            남는 돈 <b>{won(l.profit)}</b>
+            예상 수익 <b>{won(l.profit)}</b>
           </span>
           {l.laborUnpaid > 0 && <span className="lg-red">인건비 미지급 {won(l.laborUnpaid)}</span>}
         </div>

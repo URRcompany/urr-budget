@@ -196,10 +196,10 @@ export function ProjectEditor({ project, onClose, onSave, onDelete }: ProjectEdi
             아직 받을 돈<b className={l.due ? 'lg-red' : 'lg-green'}>{won(l.due)}</b>
           </div>
           <div>
-            총 지출<b>{won(l.expense)}</b>
+            쓴 돈<b>{won(l.expense)}</b>
           </div>
           <div>
-            남는 돈<b>{won(l.profit)}</b>
+            예상 수익<b>{won(l.profit)}</b>
           </div>
         </div>
 
